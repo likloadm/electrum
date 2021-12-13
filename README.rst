@@ -9,6 +9,7 @@ Electrum - Lightweight Bitcoin client
   Homepage: https://electrum.org/
 
 
+
 .. image:: https://api.cirrus-ci.com/github/spesmilo/electrum.svg?branch=master
     :target: https://cirrus-ci.com/github/spesmilo/electrum
     :alt: Build Status
