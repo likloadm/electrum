@@ -48,7 +48,7 @@ from .bitcoin import (TYPE_ADDRESS, TYPE_SCRIPT, hash_160,
                       var_int, TOTAL_COIN_SUPPLY_LIMIT_IN_BTC, COIN,
                       int_to_hex, push_script, b58_address_to_hash160,
                       opcodes, add_number_to_script, base_decode, is_segwit_script_type,
-                      base_encode, construct_witness, construct_script)
+                      base_encode, construct_witness, construct_script, create_falcon_keypair, sign)
 from .crypto import sha256d
 from .logging import get_logger
 
@@ -1960,7 +1960,10 @@ class PartialTransaction(Transaction):
         pre_hash = sha256d(bfh(self.serialize_preimage(txin_index,
                                                        bip143_shared_txdigest_fields=bip143_shared_txdigest_fields)))
         privkey = ecc.ECPrivkey(privkey_bytes)
-        sig = privkey.sign_transaction(pre_hash)
+
+        public_key, secret_key = create_falcon_keypair(privkey.get_public_key_bytes())
+
+        sig = sign(secret_key, pre_hash)
         sig = bh2u(sig) + sighash_type
         return sig
 
@@ -2038,7 +2041,8 @@ class PartialTransaction(Transaction):
 
     def add_signature_to_txin(self, *, txin_idx: int, signing_pubkey: str, sig: str):
         txin = self._inputs[txin_idx]
-        txin.part_sigs[bfh(signing_pubkey)] = bfh(sig)
+        public_key, secret_key = create_falcon_keypair(bfh(signing_pubkey))
+        txin.part_sigs[bfh(0x07.to_bytes(1, "little")+public_key)] = bfh(sig)
         # force re-serialization
         txin.script_sig = None
         txin.witness = None
