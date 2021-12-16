@@ -75,32 +75,19 @@ def deserialize_header(s: bytes, height: int) -> dict:
     h['block_height'] = height
     return h
 
-def hash_pow_header(header: dict) -> str:
-    if header is None:
-        return '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
-    if header.get('prev_block_hash') is None:
-        header['prev_block_hash'] = '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
-    print('hash', header)
-    return hash_pow_raw_header(serialize_header(header))
-
 
 def hash_header(header: dict) -> str:
     if header is None:
         return '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
     if header.get('prev_block_hash') is None:
         header['prev_block_hash'] = '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
-    print('hash', header)
     return hash_raw_header(serialize_header(header))
 
-def hash_pow_raw_header(header: str) -> str:
-    print('header', header)
-    print('yespower', hash_encode(sha256d(bfh(header))))
-    return hash_encode(tdc_yespower.getPoWHash(bfh(header)))
+def pow_raw_header(header: dict) -> str:
+    return hash_encode(tdc_yespower.getPoWHash(bfh(serialize_header(header))))
 
 
 def hash_raw_header(header: str) -> str:
-    print('header', header)
-    print('yespower', hash_encode(sha256d(bfh(header))))
     return hash_encode(sha256d(bfh(header)))
 
 
@@ -325,7 +312,7 @@ class Blockchain(Logger):
         print(bits, header.get('bits'))
         if bits != header.get('bits'):
             raise Exception("bits mismatch: %s vs %s" % (bits, header.get('bits')))
-        block_hash_as_num = int.from_bytes(bfh(hash_pow_header(header)), byteorder='big')
+        block_hash_as_num = int.from_bytes(bfh(pow_raw_header(header)), byteorder='big')
         if block_hash_as_num > target:
             raise Exception(f"insufficient proof of work: {block_hash_as_num} vs target {target}")
 
