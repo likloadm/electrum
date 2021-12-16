@@ -5,10 +5,10 @@
         "t": "51001",
         "version": "1.2"
     },
-    "signet-electrumx.wakiyamap.dev": {
+    "35.81.34.126": {
         "pruning": "-",
-        "s": "50002",
         "t": "50001",
+        "s": "50002",
         "version": "1.4"
     }
 }

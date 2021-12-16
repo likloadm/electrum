@@ -28,8 +28,8 @@ if TYPE_CHECKING:
     from .lnworker import LNWallet
 
 
-API_URL_MAINNET = 'https://swaps.electrum.org/api'
-API_URL_TESTNET = 'https://swaps.electrum.org/testnet'
+API_URL_MAINNET = 'https://swapsa.electrum.org/api'
+API_URL_TESTNET = 'https://swapsa.electrum.org/testnet'
 API_URL_REGTEST = 'https://localhost/api'
 
 

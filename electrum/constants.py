@@ -61,30 +61,45 @@ class AbstractNet:
 
     @classmethod
     def max_checkpoint(cls) -> int:
-        return max(0, len(cls.CHECKPOINTS) * 2016 - 1)
+        return max(0, len(cls.CHECKPOINTS) * 7200 - 1)
 
     @classmethod
     def rev_genesis_bytes(cls) -> bytes:
         return bytes.fromhex(bitcoin.rev_hex(cls.GENESIS))
 
+# class Tidecoin(Coin):
+#     NAME = "Tidecoin"
+#     SHORTNAME = "TDC"
+#     NET = "mainnet"
+#     XPUB_VERBYTES = bytes.fromhex("0768acde")
+#     XPRV_VERBYTES = bytes.fromhex("0768feb1")
+#     P2PKH_VERBYTE = bytes.fromhex("21")
+#     P2SH_VERBYTES = (bytes.fromhex("46"), bytes.fromhex("41"))
+#     WIF_BYTE = bytes.fromhex("7d")
+#     GENESIS_HASH = ('480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075')
+#     DESERIALIZER = lib_tx.DeserializerSegWit
+#     RPC_PORT = 8754
+#     PEERS = []
+#     TX_COUNT = 440617
+#     TX_COUNT_HEIGHT = 11052
+#     TX_PER_BLOCK = 3
 
 class BitcoinMainnet(AbstractNet):
 
     NET_NAME = "mainnet"
     TESTNET = False
-    WIF_PREFIX = 0x80
-    ADDRTYPE_P2PKH = 0
-    ADDRTYPE_P2SH = 5
-    SEGWIT_HRP = "bc"
+    WIF_PREFIX = 0x7D
+    ADDRTYPE_P2PKH = 33
+    ADDRTYPE_P2SH = 70
+    SEGWIT_HRP = "tbc"
     BOLT11_HRP = SEGWIT_HRP
-    GENESIS = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+    GENESIS = "480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075"
     DEFAULT_PORTS = {'t': '50001', 's': '50002'}
     DEFAULT_SERVERS = read_json('servers.json', {})
     CHECKPOINTS = read_json('checkpoints.json', [])
-    BLOCK_HEIGHT_FIRST_LIGHTNING_CHANNELS = 497000
 
     XPRV_HEADERS = {
-        'standard':    0x0488ade4,  # xprv
+        'standard':    0x0768feb1,  # xprv
         'p2wpkh-p2sh': 0x049d7878,  # yprv
         'p2wsh-p2sh':  0x0295b005,  # Yprv
         'p2wpkh':      0x04b2430c,  # zprv
@@ -92,7 +107,7 @@ class BitcoinMainnet(AbstractNet):
     }
     XPRV_HEADERS_INV = inv_dict(XPRV_HEADERS)
     XPUB_HEADERS = {
-        'standard':    0x0488b21e,  # xpub
+        'standard':    0x0768acde,  # xpub
         'p2wpkh-p2sh': 0x049d7cb2,  # ypub
         'p2wsh-p2sh':  0x0295b43f,  # Ypub
         'p2wpkh':      0x04b24746,  # zpub
@@ -102,9 +117,8 @@ class BitcoinMainnet(AbstractNet):
     BIP44_COIN_TYPE = 0
     LN_REALM_BYTE = 0
     LN_DNS_SEEDS = [
-        'nodes.lightning.directory.',
-        'lseed.bitcoinstats.com.',
-        'lseed.darosior.ninja',
+        'tidecoin.ddnsgeek.com',
+        'tidecoin.theworkpc.com',
     ]
 
 
@@ -180,7 +194,7 @@ class BitcoinSignet(BitcoinTestnet):
     CHECKPOINTS = []
     LN_DNS_SEEDS = []
 
-
+CHUNK_SIZE = 7200
 NETS_LIST = tuple(all_subclasses(AbstractNet))
 
 # don't import net directly, import the module instead (so that net is singleton)

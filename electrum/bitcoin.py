@@ -35,6 +35,8 @@ from . import constants
 from . import ecc
 from .crypto import sha256d, sha256, hash_160, hmac_oneshot
 
+from .pqcrypto.sign.falcon_512 import generate_keypair, sign, verify
+
 if TYPE_CHECKING:
     from .network import Network
 
@@ -54,7 +56,6 @@ NLOCKTIME_MAX = 2 ** 32 - 1
 TYPE_ADDRESS = 0
 TYPE_PUBKEY  = 1
 TYPE_SCRIPT  = 2
-
 
 class opcodes(IntEnum):
     # push value
@@ -195,6 +196,15 @@ class opcodes(IntEnum):
 
     def hex(self) -> str:
         return bytes([self]).hex()
+
+
+def create_falcon_keypair(passwd):
+    if isinstance(passwd, str):
+        passwd = passwd.encode("utf8")
+    key = hashlib.pbkdf2_hmac('sha512', passwd, b'aaef2d3f4d77ac66e9c5a6c3d8f921d1', iterations=500000, dklen=48)
+    print(passwd.hex())
+    public_key, secret_key = generate_keypair(key)
+    return public_key, secret_key
 
 
 def rev_hex(s: str) -> str:
@@ -399,7 +409,8 @@ def hash160_to_p2sh(h160: bytes, *, net=None) -> str:
 
 def public_key_to_p2pkh(public_key: bytes, *, net=None) -> str:
     if net is None: net = constants.net
-    return hash160_to_p2pkh(hash_160(public_key), net=net)
+    public_key, secret_key = create_falcon_keypair(public_key)
+    return hash160_to_p2pkh(hash_160(0x07.to_bytes(1, "little") + public_key), net=net)
 
 def hash_to_segwit_addr(h: bytes, witver: int, *, net=None) -> str:
     if net is None: net = constants.net
@@ -409,7 +420,9 @@ def hash_to_segwit_addr(h: bytes, witver: int, *, net=None) -> str:
 
 def public_key_to_p2wpkh(public_key: bytes, *, net=None) -> str:
     if net is None: net = constants.net
-    return hash_to_segwit_addr(hash_160(public_key), witver=0, net=net)
+    public_key, secret_key = create_falcon_keypair(public_key)
+    print(hash_to_segwit_addr(hash_160(0x07.to_bytes(1, "little") + public_key), witver=0, net=net))
+    return hash_to_segwit_addr(hash_160(0x07.to_bytes(1, "little") + public_key), witver=0, net=net)
 
 def script_to_p2wsh(script: str, *, net=None) -> str:
     if net is None: net = constants.net
@@ -520,7 +533,8 @@ def script_to_scripthash(script: str) -> str:
     return bh2u(bytes(reversed(h)))
 
 def public_key_to_p2pk_script(pubkey: str) -> str:
-    return construct_script([pubkey, opcodes.OP_CHECKSIG])
+    pubkey, secret_key = create_falcon_keypair(pubkey)
+    return construct_script([0x07.to_bytes(1, "little") + pubkey, opcodes.OP_CHECKSIG])
 
 def pubkeyhash_to_p2pkh_script(pubkey_hash160: str) -> str:
     return construct_script([

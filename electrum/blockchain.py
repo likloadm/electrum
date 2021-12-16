@@ -23,8 +23,9 @@
 import os
 import threading
 import time
+import traceback
 from typing import Optional, Dict, Mapping, Sequence
-
+from .constants import CHUNK_SIZE
 from . import util
 from .bitcoin import hash_encode, int_to_hex, rev_hex
 from .crypto import sha256d
@@ -32,12 +33,12 @@ from . import constants
 from .util import bfh, bh2u, with_lock
 from .simple_config import SimpleConfig
 from .logging import get_logger, Logger
-
+import tdc_yespower as tdc_yespower
 
 _logger = get_logger(__name__)
 
 HEADER_SIZE = 80  # bytes
-MAX_TARGET = 0x00000000FFFF0000000000000000000000000000000000000000000000000000
+MAX_TARGET = 0x1ffff0000000000000000000000000000000000000000000000000000000000
 
 
 class MissingHeader(Exception):
@@ -47,6 +48,9 @@ class InvalidHeader(Exception):
     pass
 
 def serialize_header(header_dict: dict) -> str:
+    print('version', int_to_hex(header_dict['version'], 4))
+    print('prev_block_hash до', header_dict['prev_block_hash'])
+    print('prev_block_hash', rev_hex(header_dict['prev_block_hash']))
     s = int_to_hex(header_dict['version'], 4) \
         + rev_hex(header_dict['prev_block_hash']) \
         + rev_hex(header_dict['merkle_root']) \
@@ -71,15 +75,32 @@ def deserialize_header(s: bytes, height: int) -> dict:
     h['block_height'] = height
     return h
 
+def hash_pow_header(header: dict) -> str:
+    if header is None:
+        return '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
+    if header.get('prev_block_hash') is None:
+        header['prev_block_hash'] = '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
+    print('hash', header)
+    return hash_pow_raw_header(serialize_header(header))
+
+
 def hash_header(header: dict) -> str:
     if header is None:
-        return '0' * 64
+        return '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
     if header.get('prev_block_hash') is None:
-        header['prev_block_hash'] = '00'*32
+        header['prev_block_hash'] = '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
+    print('hash', header)
     return hash_raw_header(serialize_header(header))
+
+def hash_pow_raw_header(header: str) -> str:
+    print('header', header)
+    print('yespower', hash_encode(sha256d(bfh(header))))
+    return hash_encode(tdc_yespower.getPoWHash(bfh(header)))
 
 
 def hash_raw_header(header: str) -> str:
+    print('header', header)
+    print('yespower', hash_encode(sha256d(bfh(header))))
     return hash_encode(sha256d(bfh(header)))
 
 
@@ -163,7 +184,7 @@ _CHAINWORK_CACHE = {
 def init_headers_file_for_best_chain():
     b = get_best_chain()
     filename = b.path()
-    length = HEADER_SIZE * len(constants.net.CHECKPOINTS) * 2016
+    length = HEADER_SIZE * len(constants.net.CHECKPOINTS) * CHUNK_SIZE
     if not os.path.exists(filename) or os.path.getsize(filename) < length:
         with open(filename, 'wb') as f:
             if length > 0:
@@ -299,16 +320,18 @@ class Blockchain(Logger):
             raise Exception("prev hash mismatch: %s vs %s" % (prev_hash, header.get('prev_block_hash')))
         if constants.net.TESTNET:
             return
+        print('target', target)
         bits = cls.target_to_bits(target)
+        print(bits, header.get('bits'))
         if bits != header.get('bits'):
             raise Exception("bits mismatch: %s vs %s" % (bits, header.get('bits')))
-        block_hash_as_num = int.from_bytes(bfh(_hash), byteorder='big')
+        block_hash_as_num = int.from_bytes(bfh(hash_pow_header(header)), byteorder='big')
         if block_hash_as_num > target:
             raise Exception(f"insufficient proof of work: {block_hash_as_num} vs target {target}")
 
     def verify_chunk(self, index: int, data: bytes) -> None:
         num = len(data) // HEADER_SIZE
-        start_height = index * 2016
+        start_height = index * CHUNK_SIZE
         prev_hash = self.get_hash(start_height - 1)
         target = self.get_target(index-1)
         for i in range(num):
@@ -318,7 +341,7 @@ class Blockchain(Logger):
             except MissingHeader:
                 expected_header_hash = None
             raw_header = data[i*HEADER_SIZE : (i+1)*HEADER_SIZE]
-            header = deserialize_header(raw_header, index*2016 + i)
+            header = deserialize_header(raw_header, index*CHUNK_SIZE + i)
             self.verify_header(header, prev_hash, target, expected_header_hash)
             prev_hash = hash_header(header)
 
@@ -345,7 +368,7 @@ class Blockchain(Logger):
             main_chain.save_chunk(index, chunk)
             return
 
-        delta_height = (index * 2016 - self.forkpoint)
+        delta_height = (index * CHUNK_SIZE - self.forkpoint)
         delta_bytes = delta_height * HEADER_SIZE
         # if this chunk contains our forkpoint, only save the part after forkpoint
         # (the part before is the responsibility of the parent)
@@ -496,7 +519,7 @@ class Blockchain(Logger):
     def get_hash(self, height: int) -> str:
         def is_height_checkpoint():
             within_cp_range = height <= constants.net.max_checkpoint()
-            at_chunk_boundary = (height+1) % 2016 == 0
+            at_chunk_boundary = (height+1) % CHUNK_SIZE == 0
             return within_cp_range and at_chunk_boundary
 
         if height == -1:
@@ -504,7 +527,7 @@ class Blockchain(Logger):
         elif height == 0:
             return constants.net.GENESIS
         elif is_height_checkpoint():
-            index = height // 2016
+            index = height // CHUNK_SIZE
             h, t = self.checkpoints[index]
             return h
         else:
@@ -523,17 +546,20 @@ class Blockchain(Logger):
             h, t = self.checkpoints[index]
             return t
         # new target
-        first = self.read_header(index * 2016)
-        last = self.read_header(index * 2016 + 2015)
+
+        first = self.read_header(index * CHUNK_SIZE)
+        last = self.read_header(index * CHUNK_SIZE + CHUNK_SIZE - 1)
         if not first or not last:
             raise MissingHeader()
         bits = last.get('bits')
         target = self.bits_to_target(bits)
         nActualTimespan = last.get('timestamp') - first.get('timestamp')
-        nTargetTimespan = 14 * 24 * 60 * 60
+        nTargetTimespan = 5 * 24 * 60 * 60
         nActualTimespan = max(nActualTimespan, nTargetTimespan // 4)
         nActualTimespan = min(nActualTimespan, nTargetTimespan * 4)
         new_target = min(MAX_TARGET, (target * nActualTimespan) // nTargetTimespan)
+
+
         # not any target can be represented in 32 bits:
         new_target = self.bits_to_target(self.target_to_bits(new_target))
         return new_target
@@ -541,7 +567,7 @@ class Blockchain(Logger):
     @classmethod
     def bits_to_target(cls, bits: int) -> int:
         bitsN = (bits >> 24) & 0xff
-        if not (0x03 <= bitsN <= 0x1d):
+        if not (0x03 <= bitsN <= 0x20):
             raise Exception("First part of bits should be in [0x03, 0x1d]")
         bitsBase = bits & 0xffffff
         if not (0x8000 <= bitsBase <= 0x7fffff):
@@ -550,7 +576,7 @@ class Blockchain(Logger):
 
     @classmethod
     def target_to_bits(cls, target: int) -> int:
-        c = ("%064x" % target)[2:]
+        c = ("%065x" % target)[2:]
         while c[:2] == '00' and len(c) > 6:
             c = c[2:]
         bitsN, bitsBase = len(c) // 2, int.from_bytes(bfh(c[:6]), byteorder='big')
@@ -561,7 +587,7 @@ class Blockchain(Logger):
 
     def chainwork_of_header_at_height(self, height: int) -> int:
         """work done by single header at given height"""
-        chunk_idx = height // 2016 - 1
+        chunk_idx = height // CHUNK_SIZE - 1
         target = self.get_target(chunk_idx)
         work = ((2 ** 256 - target - 1) // (target + 1)) + 1
         return work
@@ -574,23 +600,23 @@ class Blockchain(Logger):
             # On testnet/regtest, difficulty works somewhat different.
             # It's out of scope to properly implement that.
             return height
-        last_retarget = height // 2016 * 2016 - 1
+        last_retarget = height // CHUNK_SIZE * CHUNK_SIZE - 1
         cached_height = last_retarget
         while _CHAINWORK_CACHE.get(self.get_hash(cached_height)) is None:
             if cached_height <= -1:
                 break
-            cached_height -= 2016
+            cached_height -= CHUNK_SIZE
         assert cached_height >= -1, cached_height
         running_total = _CHAINWORK_CACHE[self.get_hash(cached_height)]
         while cached_height < last_retarget:
-            cached_height += 2016
+            cached_height += CHUNK_SIZE
             work_in_single_header = self.chainwork_of_header_at_height(cached_height)
-            work_in_chunk = 2016 * work_in_single_header
+            work_in_chunk = CHUNK_SIZE * work_in_single_header
             running_total += work_in_chunk
             _CHAINWORK_CACHE[self.get_hash(cached_height)] = running_total
-        cached_height += 2016
+        cached_height += CHUNK_SIZE
         work_in_single_header = self.chainwork_of_header_at_height(cached_height)
-        work_in_last_partial_chunk = (height % 2016 + 1) * work_in_single_header
+        work_in_last_partial_chunk = (height % CHUNK_SIZE + 1) * work_in_single_header
         return running_total + work_in_last_partial_chunk
 
     def can_connect(self, header: dict, check_height: bool=True) -> bool:
@@ -608,7 +634,7 @@ class Blockchain(Logger):
         if prev_hash != header.get('prev_block_hash'):
             return False
         try:
-            target = self.get_target(height // 2016 - 1)
+            target = self.get_target(height // CHUNK_SIZE - 1)
         except MissingHeader:
             return False
         try:
@@ -631,9 +657,9 @@ class Blockchain(Logger):
     def get_checkpoints(self):
         # for each chunk, store the hash of the last block and the target after the chunk
         cp = []
-        n = self.height() // 2016
+        n = self.height() // CHUNK_SIZE
         for index in range(n):
-            h = self.get_hash((index+1) * 2016 -1)
+            h = self.get_hash((index+1) * CHUNK_SIZE -1)
             target = self.get_target(index)
             cp.append((h, target))
         return cp

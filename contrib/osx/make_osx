@@ -108,7 +108,7 @@ git submodule update --init
 
 rm  -rf "$BUILDDIR" > /dev/null 2>&1
 mkdir "$BUILDDIR"
-
+python3 "$PROJECT_ROOT/compile.py"
 info "generating locale"
 (
     if ! which msgfmt > /dev/null 2>&1; then
