@@ -38,7 +38,7 @@ import tdc_yespower as tdc_yespower
 _logger = get_logger(__name__)
 
 HEADER_SIZE = 80  # bytes
-MAX_TARGET = 0x01ffff0000000000000000000000000000000000000000000000000000000000
+MAX_TARGET = 0x01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 
 
 class MissingHeader(Exception):
@@ -528,13 +528,20 @@ class Blockchain(Logger):
             return constants.net.GENESIS
         elif is_height_checkpoint():
             index = height // CHUNK_SIZE
-            h, t = self.checkpoints[index]
+            h, t, ts = self.checkpoints[index]
             return h
         else:
             header = self.read_header(height)
             if header is None:
                 raise MissingHeader(height)
             return hash_header(header)
+
+    def get_timestamp(self, height):
+        if height < len(self.checkpoints) * CHUNK_SIZE and (height + 1) % CHUNK_SIZE == 0:
+            index = height // CHUNK_SIZE
+            _, _, ts = self.checkpoints[index]
+            return ts
+        return self.read_header(height).get('timestamp')
 
     def get_target(self, index: int) -> int:
         # compute target from chunk x, used in chunk x+1
@@ -543,24 +550,22 @@ class Blockchain(Logger):
         if index == -1:
             return MAX_TARGET
         if index < len(self.checkpoints):
-            h, t = self.checkpoints[index]
+            h, t, ts = self.checkpoints[index]
             return t
         # new target
 
-        first = self.read_header(index * CHUNK_SIZE)
+        first = self.get_timestamp(index * CHUNK_SIZE- 1 if index > 0 else 0)
         last = self.read_header(index * CHUNK_SIZE + CHUNK_SIZE - 1)
         if not first or not last:
             raise MissingHeader()
         bits = last.get('bits')
         target = self.bits_to_target(bits)
-        fshift = target > MAX_TARGET - 1
-        if (fshift):
-            target = target >> 1
+
         print('target', target)
-        nActualTimespan = last.get('timestamp') - first.get('timestamp')
-        print('timestamp', last.get('timestamp'),  first.get('timestamp'))
+        nActualTimespan = last.get('timestamp') - first
+        print('timestamp', last.get('timestamp'),  first)
         print('nActualTimespan', nActualTimespan)
-        nTargetTimespan = 5 * 24 * 60 * 60
+        nTargetTimespan = 7200 * 60
         print('nTargetTimespan', nTargetTimespan)
         nActualTimespan = max(nActualTimespan, nTargetTimespan // 4)
         print('nActualTimespan', nActualTimespan)
@@ -568,9 +573,12 @@ class Blockchain(Logger):
         print('nActualTimespan', nActualTimespan)
 
         result = (target * nActualTimespan) // nTargetTimespan
-        if (fshift):
-            result = result << 1
+
+        print(f"{target} * {nActualTimespan} // {nTargetTimespan} = {result}")
+
         new_target = min(MAX_TARGET, result)
+
+        print(f"target_to_bits {self.target_to_bits(new_target)}")
         print('new_target', new_target)
 
         # not any target can be represented in 32 bits:
@@ -589,7 +597,7 @@ class Blockchain(Logger):
 
     @classmethod
     def target_to_bits(cls, target: int) -> int:
-        c = ("%064x" % target)
+        c = ("%066x" % target)[2:]
         while c[:2] == '00' and len(c) > 6:
             c = c[2:]
         bitsN, bitsBase = len(c) // 2, int.from_bytes(bfh(c[:6]), byteorder='big')
@@ -653,6 +661,7 @@ class Blockchain(Logger):
         try:
             self.verify_header(header, prev_hash, target)
         except BaseException as e:
+            print(traceback.format_exc())
             return False
         return True
 
