@@ -48,6 +48,9 @@ class InvalidHeader(Exception):
     pass
 
 def serialize_header(header_dict: dict) -> str:
+    print('version', int_to_hex(header_dict['version'], 4))
+    print('prev_block_hash до', header_dict['prev_block_hash'])
+    print('prev_block_hash', rev_hex(header_dict['prev_block_hash']))
     s = int_to_hex(header_dict['version'], 4) \
         + rev_hex(header_dict['prev_block_hash']) \
         + rev_hex(header_dict['merkle_root']) \
@@ -77,6 +80,7 @@ def hash_pow_header(header: dict) -> str:
         return '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
     if header.get('prev_block_hash') is None:
         header['prev_block_hash'] = '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
+    print('hash', header)
     return hash_pow_raw_header(serialize_header(header))
 
 
@@ -85,13 +89,18 @@ def hash_header(header: dict) -> str:
         return '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
     if header.get('prev_block_hash') is None:
         header['prev_block_hash'] = '480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075'
+    print('hash', header)
     return hash_raw_header(serialize_header(header))
 
 def hash_pow_raw_header(header: str) -> str:
+    print('header', header)
+    print('yespower', hash_encode(sha256d(bfh(header))))
     return hash_encode(tdc_yespower.getPoWHash(bfh(header)))
 
 
 def hash_raw_header(header: str) -> str:
+    print('header', header)
+    print('yespower', hash_encode(sha256d(bfh(header))))
     return hash_encode(sha256d(bfh(header)))
 
 
@@ -311,7 +320,9 @@ class Blockchain(Logger):
             raise Exception("prev hash mismatch: %s vs %s" % (prev_hash, header.get('prev_block_hash')))
         if constants.net.TESTNET:
             return
+        print('target', target)
         bits = cls.target_to_bits(target)
+        print(bits, header.get('bits'))
         if bits != header.get('bits'):
             raise Exception("bits mismatch: %s vs %s" % (bits, header.get('bits')))
         block_hash_as_num = int.from_bytes(bfh(hash_pow_header(header)), byteorder='big')
@@ -550,12 +561,26 @@ class Blockchain(Logger):
         bits = last.get('bits')
         target = self.bits_to_target(bits)
 
+        print('target', target)
         nActualTimespan = last.get('timestamp') - first
+        print('timestamp', last.get('timestamp'),  first)
+        print('nActualTimespan', nActualTimespan)
         nTargetTimespan = 7200 * 60
+        print('nTargetTimespan', nTargetTimespan)
         nActualTimespan = max(nActualTimespan, nTargetTimespan // 4)
+        print('nActualTimespan', nActualTimespan)
         nActualTimespan = min(nActualTimespan, nTargetTimespan * 4)
+        print('nActualTimespan', nActualTimespan)
+
         result = (target * nActualTimespan) // nTargetTimespan
+
+        print(f"{target} * {nActualTimespan} // {nTargetTimespan} = {result}")
+
         new_target = min(MAX_TARGET, result)
+
+        print(f"target_to_bits {self.target_to_bits(new_target)}")
+        print('new_target', new_target)
+
         # not any target can be represented in 32 bits:
         new_target = self.bits_to_target(self.target_to_bits(new_target))
         return new_target
@@ -636,6 +661,7 @@ class Blockchain(Logger):
         try:
             self.verify_header(header, prev_hash, target)
         except BaseException as e:
+            print(traceback.format_exc())
             return False
         return True
 
