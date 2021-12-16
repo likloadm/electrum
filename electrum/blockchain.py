@@ -38,7 +38,7 @@ import tdc_yespower as tdc_yespower
 _logger = get_logger(__name__)
 
 HEADER_SIZE = 80  # bytes
-MAX_TARGET = 0x1ffff0000000000000000000000000000000000000000000000000000000000
+MAX_TARGET = 0x01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
 
 
 class MissingHeader(Exception):
@@ -553,12 +553,18 @@ class Blockchain(Logger):
             raise MissingHeader()
         bits = last.get('bits')
         target = self.bits_to_target(bits)
+        print('target', target)
         nActualTimespan = last.get('timestamp') - first.get('timestamp')
+        print('timestamp', last.get('timestamp'),  first.get('timestamp'))
+        print('nActualTimespan', nActualTimespan)
         nTargetTimespan = 5 * 24 * 60 * 60
+        print('nTargetTimespan', nTargetTimespan)
         nActualTimespan = max(nActualTimespan, nTargetTimespan // 4)
+        print('nActualTimespan', nActualTimespan)
         nActualTimespan = min(nActualTimespan, nTargetTimespan * 4)
+        print('nActualTimespan', nActualTimespan)
         new_target = min(MAX_TARGET, (target * nActualTimespan) // nTargetTimespan)
-
+        print('new_target', new_target)
 
         # not any target can be represented in 32 bits:
         new_target = self.bits_to_target(self.target_to_bits(new_target))
@@ -576,7 +582,7 @@ class Blockchain(Logger):
 
     @classmethod
     def target_to_bits(cls, target: int) -> int:
-        c = ("%065x" % target)[2:]
+        c = ("%064x" % target)
         while c[:2] == '00' and len(c) > 6:
             c = c[2:]
         bitsN, bitsBase = len(c) // 2, int.from_bytes(bfh(c[:6]), byteorder='big')
