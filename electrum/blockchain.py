@@ -38,7 +38,7 @@ import tdc_yespower as tdc_yespower
 _logger = get_logger(__name__)
 
 HEADER_SIZE = 80  # bytes
-MAX_TARGET = 0x01ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+MAX_TARGET = 0x01ffff0000000000000000000000000000000000000000000000000000000000
 
 
 class MissingHeader(Exception):
@@ -553,6 +553,9 @@ class Blockchain(Logger):
             raise MissingHeader()
         bits = last.get('bits')
         target = self.bits_to_target(bits)
+        fshift = target > MAX_TARGET - 1
+        if (fshift):
+            target = target >> 1
         print('target', target)
         nActualTimespan = last.get('timestamp') - first.get('timestamp')
         print('timestamp', last.get('timestamp'),  first.get('timestamp'))
@@ -563,7 +566,11 @@ class Blockchain(Logger):
         print('nActualTimespan', nActualTimespan)
         nActualTimespan = min(nActualTimespan, nTargetTimespan * 4)
         print('nActualTimespan', nActualTimespan)
-        new_target = min(MAX_TARGET, (target * nActualTimespan) // nTargetTimespan)
+
+        result = (target * nActualTimespan) // nTargetTimespan
+        if (fshift):
+            result = result << 1
+        new_target = min(MAX_TARGET, result)
         print('new_target', new_target)
 
         # not any target can be represented in 32 bits:
