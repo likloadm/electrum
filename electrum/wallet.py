@@ -361,7 +361,7 @@ class Abstract_Wallet(AddressSynchronizer, ABC):
             self.db.put('lightning_privkey2', ln_xprv)
         if self.network:
             self.network.run_from_another_thread(self.stop())
-        self.lnworker = LNWallet(self, ln_xprv)
+        self.lnworker = False #LNWallet(self, ln_xprv)
         if self.network:
             self.start_network(self.network)
 
@@ -2908,7 +2908,7 @@ class Deterministic_Wallet(Abstract_Wallet):
         ln_xprv = self.db.get('lightning_xprv') or self.db.get('lightning_privkey2')
         # lnworker can only be initialized once receiving addresses are available
         # therefore we instantiate lnworker in DeterministicWallet
-        self.lnworker = LNWallet(self, ln_xprv) if ln_xprv else None
+        self.lnworker = False #LNWallet(self, ln_xprv) if ln_xprv else None
 
     def has_seed(self):
         return self.keystore.has_seed()

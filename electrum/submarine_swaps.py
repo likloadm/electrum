@@ -137,7 +137,7 @@ class SwapManager(Logger):
         self.min_amount = 0
         self._max_amount = 0
         self.wallet = wallet
-        self.lnworker = lnworker
+        self.lnworker = False #lnworker
         self.swaps = self.wallet.db.get_dict('submarine_swaps')  # type: Dict[str, SwapData]
         self.prepayments = {}  # type: Dict[bytes, bytes] # fee_preimage -> preimage
         for k, swap in self.swaps.items():
