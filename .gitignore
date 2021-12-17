@@ -26,6 +26,7 @@ electrum_data
 .coverage
 .pytest_cache
 *.o
+*.so
 # build workspaces
 contrib/build-wine/tmp/
 contrib/build-wine/build/
