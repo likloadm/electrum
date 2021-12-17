@@ -3158,7 +3158,6 @@ class Multisig_Wallet(Deterministic_Wallet):
 
     def pubkeys_to_scriptcode(self, pubkeys: Sequence[str]) -> str:
         pubkeys = [(0x07.to_bytes(1, "little")+create_falcon_keypair(pubkey)[0]).hex() for pubkey in sorted(pubkeys)]
-        print('multisig_script', transaction.multisig_script(sorted(pubkeys), self.m))
         return transaction.multisig_script(sorted(pubkeys), self.m)
 
     def get_redeem_script(self, address):

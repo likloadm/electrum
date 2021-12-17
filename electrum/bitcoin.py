@@ -202,7 +202,6 @@ def create_falcon_keypair(passwd):
     if isinstance(passwd, str):
         passwd = bfh(passwd)
     key = hashlib.pbkdf2_hmac('sha512', passwd, b'aaef2d3f4d77ac66e9c5a6c3d8f921d1', iterations=500000, dklen=48)
-    print(passwd.hex())
     public_key, secret_key = generate_keypair(key)
     return public_key, secret_key
 

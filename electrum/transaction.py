@@ -572,6 +572,7 @@ def parse_output(vds: BCDataStream) -> TxOutput:
 def multisig_script(public_keys: Sequence[str], m: int) -> str:
     n = len(public_keys)
     assert 1 <= m <= n <= 15, f'm {m}, n {n}'
+    print(construct_script([m, *public_keys, n, opcodes.OP_CHECKMULTISIG]))
     return construct_script([m, *public_keys, n, opcodes.OP_CHECKMULTISIG])
 
 
