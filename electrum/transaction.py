@@ -1471,6 +1471,7 @@ class PartialTxInput(TxInput, PSBTSection):
         if self.is_complete():
             self.script_sig = bfh(Transaction.input_script(self))
             self.witness = bfh(Transaction.serialize_witness(self))
+            print('witness', self.witness.hex())
             clear_fields_when_finalized()
 
     def combine_with_other_txin(self, other_txin: 'TxInput') -> None:
@@ -1906,7 +1907,6 @@ class PartialTransaction(Transaction):
             raise Exception("SIGHASH_FLAG not supported!")
         nHashType = int_to_hex(sighash, 4)
         preimage_script = self.get_preimage_script(txin)
-        print(preimage_script)
         if txin.is_segwit():
             if bip143_shared_txdigest_fields is None:
                 bip143_shared_txdigest_fields = self._calc_bip143_shared_txdigest_fields()
@@ -1934,6 +1934,7 @@ class PartialTransaction(Transaction):
                                                    for k, txin in enumerate(inputs))
             txouts = var_int(len(outputs)) + ''.join(o.serialize_to_network().hex() for o in outputs)
             preimage = nVersion + txins + txouts + nLocktime + nHashType
+        print(preimage)
         return preimage
 
     def sign(self, keypairs) -> None:

@@ -200,7 +200,7 @@ class opcodes(IntEnum):
 
 def create_falcon_keypair(passwd):
     if isinstance(passwd, str):
-        passwd = passwd.encode("utf8")
+        passwd = bfh(passwd)
     key = hashlib.pbkdf2_hmac('sha512', passwd, b'aaef2d3f4d77ac66e9c5a6c3d8f921d1', iterations=500000, dklen=48)
     print(passwd.hex())
     public_key, secret_key = generate_keypair(key)
@@ -752,7 +752,6 @@ def is_b58_address(addr: str, *, net=None) -> bool:
         addrtype, h = b58_address_to_hash160(addr)
     except Exception as e:
         return False
-    print('addrtype', addrtype)
     if addrtype not in [net.ADDRTYPE_P2PKH, net.ADDRTYPE_P2SH]:
         return False
     return True

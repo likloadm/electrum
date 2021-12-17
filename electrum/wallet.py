@@ -58,7 +58,7 @@ from .util import (NotEnoughFunds, UserCancelled, profiler,
                    InvalidPassword, format_time, timestamp_to_datetime, Satoshis,
                    Fiat, bfh, bh2u, TxMinedInfo, quantize_feerate, create_bip21_uri, OrderedDictWithIndex, parse_max_spend)
 from .simple_config import SimpleConfig, FEE_RATIO_HIGH_WARNING, FEERATE_WARNING_HIGH_FEE
-from .bitcoin import COIN, TYPE_ADDRESS
+from .bitcoin import COIN, TYPE_ADDRESS, create_falcon_keypair
 from .bitcoin import is_address, address_to_script, is_minikey, relayfee, dust_threshold
 from .crypto import sha256d
 from . import keystore
@@ -3006,6 +3006,7 @@ class Deterministic_Wallet(Abstract_Wallet):
     def _add_txinout_derivation_info(self, txinout, address, *, only_der_suffix):
         if not self.is_mine(address):
             return
+        print("derive !!!!!")
         pubkey_deriv_info = self.get_public_keys_with_deriv_info(address)
         txinout.pubkeys = sorted([pk for pk in list(pubkey_deriv_info)])
         for pubkey in pubkey_deriv_info:
@@ -3156,6 +3157,8 @@ class Multisig_Wallet(Deterministic_Wallet):
         return bitcoin.redeem_script_to_address(self.txin_type, redeem_script)
 
     def pubkeys_to_scriptcode(self, pubkeys: Sequence[str]) -> str:
+        pubkeys = [(0x07.to_bytes(1, "little")+create_falcon_keypair(pubkey)[0]).hex() for pubkey in sorted(pubkeys)]
+        print('multisig_script', transaction.multisig_script(sorted(pubkeys), self.m))
         return transaction.multisig_script(sorted(pubkeys), self.m)
 
     def get_redeem_script(self, address):
