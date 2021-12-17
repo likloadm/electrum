@@ -25,6 +25,7 @@
 
 import re
 import decimal
+import traceback
 from decimal import Decimal
 from typing import NamedTuple, Sequence, Optional, List, TYPE_CHECKING
 
@@ -108,12 +109,12 @@ class PayToEdit(CompletionTextEdit, ScanQRTextEdit, Logger):
             address = self.parse_address(x)
             return bfh(bitcoin.address_to_script(address))
         except Exception:
-            pass
+            print(traceback.format_exc())
         try:
             script = self.parse_script(x)
             return bfh(script)
         except Exception:
-            pass
+            print(traceback.format_exc())
         raise Exception("Invalid address or script.")
 
     def parse_script(self, x):

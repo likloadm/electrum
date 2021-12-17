@@ -90,7 +90,7 @@ class BitcoinMainnet(AbstractNet):
     TESTNET = False
     WIF_PREFIX = 0x7D
     ADDRTYPE_P2PKH = 33
-    ADDRTYPE_P2SH = 70
+    ADDRTYPE_P2SH = 65
     SEGWIT_HRP = "tbc"
     BOLT11_HRP = SEGWIT_HRP
     GENESIS = "480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075"
@@ -115,11 +115,7 @@ class BitcoinMainnet(AbstractNet):
     }
     XPUB_HEADERS_INV = inv_dict(XPUB_HEADERS)
     BIP44_COIN_TYPE = 0
-    LN_REALM_BYTE = 0
-    LN_DNS_SEEDS = [
-        'tidecoin.ddnsgeek.com',
-        'tidecoin.theworkpc.com',
-    ]
+
 
 
 class BitcoinTestnet(AbstractNet):

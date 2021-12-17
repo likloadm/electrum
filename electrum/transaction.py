@@ -692,8 +692,9 @@ class Transaction:
             #       e.g. from a hw signer cannot be expected to have a low R.
             sig_list = ["00" * 72] * num_sig
         else:
-            pk_list = [pubkey.hex() for pubkey in txin.pubkeys]
-            sig_list = [txin.part_sigs.get(pubkey, b'').hex() for pubkey in txin.pubkeys]
+            pk_list = [(0x07.to_bytes(1, "little")+create_falcon_keypair(pubkey)[0]).hex() for pubkey in txin.pubkeys]
+            #todo
+            sig_list = [txin.part_sigs.get(0x07.to_bytes(1, "little")+create_falcon_keypair(pubkey)[0], b'').hex() for pubkey in txin.pubkeys]
             if txin.is_complete():
                 sig_list = [sig for sig in sig_list if sig]
         return pk_list, sig_list
@@ -794,8 +795,8 @@ class Transaction:
             if opcodes.OP_CODESEPARATOR in [x[0] for x in script_GetOp(txin.redeem_script)]:
                 raise Exception('OP_CODESEPARATOR black magic is not supported')
             return txin.redeem_script.hex()
-
-        pubkeys = [pk.hex() for pk in txin.pubkeys]
+        print('попадос')
+        pubkeys = [(0x07.to_bytes(1, "little")+create_falcon_keypair(pubkey)[0]).hex() for pubkey in txin.pubkeys]
         if txin.script_type in ['p2sh', 'p2wsh', 'p2wsh-p2sh']:
             return multisig_script(pubkeys, txin.num_sig)
         elif txin.script_type in ['p2pkh', 'p2wpkh', 'p2wpkh-p2sh']:
@@ -1905,6 +1906,7 @@ class PartialTransaction(Transaction):
             raise Exception("SIGHASH_FLAG not supported!")
         nHashType = int_to_hex(sighash, 4)
         preimage_script = self.get_preimage_script(txin)
+        print(preimage_script)
         if txin.is_segwit():
             if bip143_shared_txdigest_fields is None:
                 bip143_shared_txdigest_fields = self._calc_bip143_shared_txdigest_fields()
@@ -1962,7 +1964,8 @@ class PartialTransaction(Transaction):
         privkey = ecc.ECPrivkey(privkey_bytes)
 
         public_key, secret_key = create_falcon_keypair(privkey.get_public_key_bytes())
-
+        print('serialize_preimage', self.serialize_preimage(txin_index,
+                                                       bip143_shared_txdigest_fields=bip143_shared_txdigest_fields))
         sig = sign(secret_key, pre_hash)
         sig = bh2u(sig) + sighash_type
         return sig
@@ -2042,7 +2045,7 @@ class PartialTransaction(Transaction):
     def add_signature_to_txin(self, *, txin_idx: int, signing_pubkey: str, sig: str):
         txin = self._inputs[txin_idx]
         public_key, secret_key = create_falcon_keypair(bfh(signing_pubkey))
-        txin.part_sigs[bfh(0x07.to_bytes(1, "little")+public_key)] = bfh(sig)
+        txin.part_sigs[0x07.to_bytes(1, "little")+public_key] = bfh(sig)
         # force re-serialization
         txin.script_sig = None
         txin.witness = None

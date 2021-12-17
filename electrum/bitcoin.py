@@ -479,6 +479,7 @@ def address_to_script(addr: str, *, net=None) -> str:
     if witprog is not None:
         if not (0 <= witver <= 16):
             raise BitcoinException(f'impossible witness version: {witver}')
+        print('witprog', construct_script([witver, bytes(witprog)]))
         return construct_script([witver, bytes(witprog)])
     addrtype, hash_160_ = b58_address_to_hash160(addr)
     if addrtype == net.ADDRTYPE_P2PKH:
@@ -751,6 +752,7 @@ def is_b58_address(addr: str, *, net=None) -> bool:
         addrtype, h = b58_address_to_hash160(addr)
     except Exception as e:
         return False
+    print('addrtype', addrtype)
     if addrtype not in [net.ADDRTYPE_P2PKH, net.ADDRTYPE_P2SH]:
         return False
     return True
