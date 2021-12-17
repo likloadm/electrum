@@ -108,7 +108,11 @@ git submodule update --init
 
 rm  -rf "$BUILDDIR" > /dev/null 2>&1
 mkdir "$BUILDDIR"
-python3 "$PROJECT_ROOT/compile.py"
+cd "$PROJECT_ROOT/electrum/pqcrypto/"
+python3 "compile.py"
+cd "$PROJECT_ROOT/tdc_yespower"
+CFLAGS=-Wno-error=implicit-function-declaration python3 "setup.py" install_lib
+cd "$PROJECT_ROOT"
 info "generating locale"
 (
     if ! which msgfmt > /dev/null 2>&1; then

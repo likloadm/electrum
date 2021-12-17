@@ -56,18 +56,15 @@ def create_algorithm_ffi(algorithm, *, path, is_kem=False, is_sign=False, **kwar
 
     variant_path = algorithm_path / variant
     header_path = variant_path / "api.h"
-    print(header_path.resolve())
-    print(variant_path)
     ffi = FFI()
     ffi.cdef(DEFINITIONS_KEM if is_kem else DEFINITIONS_SIGN)
 
     variant_sources = [file for file in variant_path.glob("**/*") if file.is_file() and file.name.endswith(".c")]
     common_sources = [file for file in PATH_COMMON.glob("**/*") if file.is_file() and file.name.endswith(".c")]
-    print([str(source.resolve()) for source in (*common_sources, *variant_sources)], compiler_args, libraries, linker_args)
     ffi.set_source(
         f"{'_kem' if is_kem else '_sign'}.{algorithm}",
         f'#include "{ str(header_path.resolve()) }"',
-        sources=['./'+str(source.resolve()).split('pqcrypto')[2] for source in (*common_sources, *variant_sources)],
+        sources=['./'+str(source.resolve()).split('pqcrypto')[1] for source in (*common_sources, *variant_sources)],
         include_dirs=[str(PATH_COMMON)],
         extra_compile_args=compiler_args,
         extra_link_args=linker_args,
