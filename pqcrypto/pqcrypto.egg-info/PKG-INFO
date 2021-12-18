@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: pqcrypto
+Version: 0.1
+Summary: Bindings for yespower-1.0 proof of work used by tidecoin
+Home-page: https://github.com/yarsawyer/tdc_yespower
+Author: yarsawyer
+Author-email: tidecoins@protonmail.com
+License: UNKNOWN
+Platform: UNKNOWN
+License-File: LICENSE
+
+UNKNOWN
+

@@ -24,18 +24,17 @@
 # SOFTWARE.
 
 import hashlib
-from typing import List, Tuple, TYPE_CHECKING, Optional, Union, Sequence
+from typing import Tuple, TYPE_CHECKING, Optional, Union, Sequence
 import enum
 from enum import IntEnum, Enum
 
 from .util import bfh, bh2u, BitcoinException, assert_bytes, to_bytes, inv_dict, is_hex_str
-from . import version
 from . import segwit_addr
 from . import constants
 from . import ecc
-from .crypto import sha256d, sha256, hash_160, hmac_oneshot
+from .crypto import sha256d, sha256, hash_160
 
-from .pqcrypto.sign.falcon_512 import generate_keypair, sign, verify
+from pqcrypto.sign.falcon_512 import generate_keypair, sign
 
 if TYPE_CHECKING:
     from .network import Network
