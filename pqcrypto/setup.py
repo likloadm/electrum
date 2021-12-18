@@ -15,13 +15,14 @@ tdc_yespower_module = Extension('pqcrypto',
                                        'sha2.c',
                                        'randombytes.c',
                                        'fips202.c',
-                                       'aes.c'
+                                       'aes.c',
+                                       'module.c',
                                        ],
                             extra_compile_args=['-O2', '-funroll-loops', '-fomit-frame-pointer'],
-                            include_dirs=['./_sign', './common', './falcon-512'])
+                            include_dirs=['.'])
 
 setup (name = 'pqcrypto',
-       version = '0.1',
+       version = '0.2',
        author_email = 'tidecoins@protonmail.com',
        author = 'yarsawyer',
        url = 'https://github.com/yarsawyer/tdc_yespower',

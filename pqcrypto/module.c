@@ -1,39 +1,45 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-static PyObject *yespower_getpowhash(PyObject *self, PyObject *args)
+static PyObject *crypto_sign_keypair_python(PyObject *self, PyObject *args)
 {
-    char *output;
-    PyObject *value;
-    PyBytesObject *input;
+    uint8_t *seed;
+    uint8_t *pubkey;
+    uint8_t *privkey;
+    uint8_t *private_key;
+    uint8_t *public_key;
 
-    if (!PyArg_ParseTuple(args, "S", &input))
+    if (!PyArg_ParseTuple(args, "S", &seed))
         return NULL;
-    Py_INCREF(input);
-    output = PyMem_Malloc(32);
+    Py_INCREF(seed);
+    pubkey = PyMem_Malloc(897);
+    privkey = PyMem_Malloc(1281);
 
-    yespower_hash((char *)PyBytes_AsString((PyObject*) input), output);
+    crypto_sign_keypair(privkey, pubkey, seed);
 
-    Py_DECREF(input);
-    value = Py_BuildValue("y#", output, 32);
+    Py_DECREF(privkey);
+    private_key = Py_BuildValue("y#", privkey, 1281);
+    Py_DECREF(pubkey);
+    public_key = Py_BuildValue("y#", pubkey, 897);
 
-    PyMem_Free(output);
-    return value;
+    PyMem_Free(privkey);
+    PyMem_Free(pubkey);
+    return private_key, public_key;
 }
 
-static PyMethodDef YespowerMethods[] = {
-    { "getPoWHash", yespower_getpowhash, METH_VARARGS, "Returns the proof of work hash using yespower" },
+static PyMethodDef pqcryptoMethods[] = {
+    { "crypto_sign_keypair", crypto_sign_keypair_python, METH_VARARGS, "crypto_sign_keypair_python" },
     { NULL, NULL, 0, NULL }
 };
 
-static struct PyModuleDef YespowerModule = {
+static struct PyModuleDef pqcryptoModule = {
     PyModuleDef_HEAD_INIT,
-    "yespower_hash",
+    "crypto_sign_keypair",
     "...",
     -1,
-    YespowerMethods
+    pqcryptoMethods
 };
 
-PyMODINIT_FUNC PyInit_tdc_yespower(void) {
-    return PyModule_Create(&YespowerModule);
+PyMODINIT_FUNC PyInit_pqcrypto(void) {
+    return PyModule_Create(&pqcryptoModule);
 }
