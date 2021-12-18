@@ -1471,7 +1471,6 @@ class PartialTxInput(TxInput, PSBTSection):
         if self.is_complete():
             self.script_sig = bfh(Transaction.input_script(self))
             self.witness = bfh(Transaction.serialize_witness(self))
-            print('witness', self.witness.hex())
             clear_fields_when_finalized()
 
     def combine_with_other_txin(self, other_txin: 'TxInput') -> None:

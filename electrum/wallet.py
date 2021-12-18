@@ -2985,6 +2985,12 @@ class Deterministic_Wallet(Abstract_Wallet):
     def derive_address(self, for_change: int, n: int) -> str:
         for_change = int(for_change)
         pubkeys = self.derive_pubkeys(for_change, n)
+        # secret_keys = self.g(for_change, n)
+        # keypairs = self._get_tx_derivations(tx)
+        # for k, v in keypairs.items():
+        #     keypairs[k] = self.get_private_key(v, None)
+        # print(keypairs)
+        #todo
         return self.pubkeys_to_address(pubkeys)
 
     def export_private_key_for_path(self, path: Union[Sequence[int], str], password: Optional[str]) -> str:

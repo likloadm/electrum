@@ -237,7 +237,6 @@ class BIP32Node(NamedTuple):
             parent_privkey = privkey
             privkey, chaincode = CKD_priv(privkey, chaincode, child_index)
             depth += 1
-        print('derivation ++')
         parent_pubkey = ecc.ECPrivkey(parent_privkey).get_public_key_bytes(compressed=True)
         fingerprint = hash_160(parent_pubkey)[0:4]
         child_number = child_index.to_bytes(length=4, byteorder="big")
