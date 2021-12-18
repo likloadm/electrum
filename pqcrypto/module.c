@@ -3,7 +3,7 @@
 
 static PyObject *crypto_sign_keypair_python(PyObject *self, PyObject *args)
 {
-    uint8_t *seed;
+    PyBytesObject *seed;
     uint8_t *pubkey;
     uint8_t *privkey;
     uint8_t *private_key;
@@ -15,7 +15,7 @@ static PyObject *crypto_sign_keypair_python(PyObject *self, PyObject *args)
     pubkey = PyMem_Malloc(897);
     privkey = PyMem_Malloc(1281);
 
-    crypto_sign_keypair(privkey, pubkey, seed);
+    crypto_sign_keypair(privkey, pubkey, (uint8_t *)PyBytes_AsString((PyObject*) seed));
 
     Py_DECREF(privkey);
     private_key = Py_BuildValue("y#", privkey, 1281);
@@ -24,7 +24,7 @@ static PyObject *crypto_sign_keypair_python(PyObject *self, PyObject *args)
 
     PyMem_Free(privkey);
     PyMem_Free(pubkey);
-    return private_key, public_key;
+    return private_key;
 }
 
 static PyMethodDef pqcryptoMethods[] = {
