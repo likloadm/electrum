@@ -153,7 +153,13 @@ USER ${USER}
 
 COPY contrib/deterministic-build/requirements-build-android.txt /opt/deterministic-build/
 RUN python3 -m pip install --no-dependencies --user \
-    -r /opt/deterministic-build/requirements-build-android.txt
+    -r /opt/deterministic-build/requirements-build-android.txt \
+
+RUN cd "$PROJECT_ROOT/electrum/pqcrypto/" \
+    python3 "compile.py"
+
+RUN cd "$PROJECT_ROOT/tdc_yespower" \
+    python3 "setup.py" install_lib
 
 # install buildozer
 RUN cd /opt \
