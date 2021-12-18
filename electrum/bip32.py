@@ -79,6 +79,7 @@ def CKD_pub(parent_pubkey: bytes, parent_chaincode: bytes, child_index: int) -> 
     """
     if child_index < 0: raise ValueError('the bip32 index needs to be non-negative')
     if child_index & BIP32_PRIME: raise Exception('not possible to derive hardened child from parent pubkey')
+
     return _CKD_pub(parent_pubkey=parent_pubkey,
                     parent_chaincode=parent_chaincode,
                     child_index=bfh(rev_hex(int_to_hex(child_index, 4))))
@@ -236,6 +237,7 @@ class BIP32Node(NamedTuple):
             parent_privkey = privkey
             privkey, chaincode = CKD_priv(privkey, chaincode, child_index)
             depth += 1
+        print('derivation ++')
         parent_pubkey = ecc.ECPrivkey(parent_privkey).get_public_key_bytes(compressed=True)
         fingerprint = hash_160(parent_pubkey)[0:4]
         child_number = child_index.to_bytes(length=4, byteorder="big")

@@ -796,7 +796,6 @@ class Transaction:
             if opcodes.OP_CODESEPARATOR in [x[0] for x in script_GetOp(txin.redeem_script)]:
                 raise Exception('OP_CODESEPARATOR black magic is not supported')
             return txin.redeem_script.hex()
-        print('попадос')
         pubkeys = [(0x07.to_bytes(1, "little")+create_falcon_keypair(pubkey)[0]).hex() for pubkey in txin.pubkeys]
         if txin.script_type in ['p2sh', 'p2wsh', 'p2wsh-p2sh']:
             return multisig_script(pubkeys, txin.num_sig)
