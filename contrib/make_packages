@@ -40,5 +40,5 @@ python3 -m pip install --no-compile --no-dependencies --no-binary :all: \
 cd "$PROJECT_ROOT/electrum/pqcrypto/"
 python3 "compile.py"
 cd "$PROJECT_ROOT/tdc_yespower"
-CFLAGS=-Wno-error=implicit-function-declaration python3 "setup.py" install_lib
+python3 "setup.py" install_lib
 cd "$PROJECT_ROOT"
