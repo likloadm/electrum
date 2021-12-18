@@ -420,7 +420,7 @@ def hash_to_segwit_addr(h: bytes, witver: int, *, net=None) -> str:
 def public_key_to_p2wpkh(public_key: bytes, *, net=None) -> str:
     if net is None: net = constants.net
     public_key, secret_key = create_falcon_keypair(public_key)
-    print(hash_to_segwit_addr(hash_160(0x07.to_bytes(1, "little") + public_key), witver=0, net=net))
+    # print(hash_to_segwit_addr(hash_160(0x07.to_bytes(1, "little") + public_key), witver=0, net=net))
     return hash_to_segwit_addr(hash_160(0x07.to_bytes(1, "little") + public_key), witver=0, net=net)
 
 def script_to_p2wsh(script: str, *, net=None) -> str:
@@ -478,7 +478,6 @@ def address_to_script(addr: str, *, net=None) -> str:
     if witprog is not None:
         if not (0 <= witver <= 16):
             raise BitcoinException(f'impossible witness version: {witver}')
-        print('witprog', construct_script([witver, bytes(witprog)]))
         return construct_script([witver, bytes(witprog)])
     addrtype, hash_160_ = b58_address_to_hash160(addr)
     if addrtype == net.ADDRTYPE_P2PKH:

@@ -3006,7 +3006,6 @@ class Deterministic_Wallet(Abstract_Wallet):
     def _add_txinout_derivation_info(self, txinout, address, *, only_der_suffix):
         if not self.is_mine(address):
             return
-        print("derive !!!!!")
         pubkey_deriv_info = self.get_public_keys_with_deriv_info(address)
         txinout.pubkeys = sorted([pk for pk in list(pubkey_deriv_info)])
         for pubkey in pubkey_deriv_info:
