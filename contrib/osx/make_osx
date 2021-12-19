@@ -108,11 +108,7 @@ git submodule update --init
 
 rm  -rf "$BUILDDIR" > /dev/null 2>&1
 mkdir "$BUILDDIR"
-cd "$PROJECT_ROOT/electrum/pqcrypto/"
-python3 "compile.py"
-cd "$PROJECT_ROOT/tdc_yespower"
-CFLAGS=-Wno-error=implicit-function-declaration python3 "setup.py" install_lib
-cd "$PROJECT_ROOT"
+
 info "generating locale"
 (
     if ! which msgfmt > /dev/null 2>&1; then
@@ -169,6 +165,13 @@ python3 -m pip install --no-dependencies --no-warn-script-location -Ir ./contrib
 info "Installing dependencies specific to binaries..."
 python3 -m pip install --no-dependencies --no-warn-script-location -Ir ./contrib/deterministic-build/requirements-binaries-mac.txt \
     || fail "Could not install dependencies specific to binaries"
+
+
+cd "$PROJECT_ROOT/tdc_falcon/"
+CFLAGS=-Wno-error=implicit-function-declaration python3 -m pip install  --no-dependencies --no-warn-script-location .
+cd "$PROJECT_ROOT/tdc_yespower"
+CFLAGS=-Wno-error=implicit-function-declaration python3 -m pip install  --no-dependencies --no-warn-script-location .
+cd "$PROJECT_ROOT"
 
 info "Building $PACKAGE..."
 python3 -m pip install --no-dependencies --no-warn-script-location . > /dev/null || fail "Could not build $PACKAGE"

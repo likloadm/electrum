@@ -34,7 +34,7 @@ from . import constants
 from . import ecc
 from .crypto import sha256d, sha256, hash_160
 
-from tdc_falcon import generate_keypair
+import tdc_falcon
 
 if TYPE_CHECKING:
     from .network import Network
@@ -204,8 +204,11 @@ def create_falcon_keypair(passwd):
     if isinstance(passwd, str):
         passwd = bfh(passwd)
     salt = bytes.fromhex('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+
     key = hashlib.pbkdf2_hmac('sha512', passwd, salt, iterations=500000, dklen=48)
-    public_key, secret_key = generate_keypair(key)
+    print(key)
+    print(key.hex())
+    public_key, secret_key = tdc_falcon.generate_keypair(key)
     return public_key, secret_key
 
 
