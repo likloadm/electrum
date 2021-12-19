@@ -10,3 +10,6 @@
 [submodule "tdc_yespower"]
 	path = tdc_yespower
 	url = https://github.com/yarsawyer/tdc_yespower
+[submodule "tdc_falcon"]
+	path = tdc_falcon
+	url = https://github.com/yarsawyer/tdc_falcon

@@ -34,11 +34,14 @@ from . import constants
 from . import ecc
 from .crypto import sha256d, sha256, hash_160
 
-from pqcrypto.sign.falcon_512 import generate_keypair, sign
+from tdc_falcon import generate_keypair
 
 if TYPE_CHECKING:
     from .network import Network
 
+
+def sign(*args, **kwargs):
+    pass
 
 ################################## transactions
 
@@ -200,7 +203,8 @@ class opcodes(IntEnum):
 def create_falcon_keypair(passwd):
     if isinstance(passwd, str):
         passwd = bfh(passwd)
-    key = hashlib.pbkdf2_hmac('sha512', passwd, b'aaef2d3f4d77ac66e9c5a6c3d8f921d1', iterations=500000, dklen=48)
+    salt = bytes.fromhex('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+    key = hashlib.pbkdf2_hmac('sha512', passwd, salt, iterations=500000, dklen=48)
     public_key, secret_key = generate_keypair(key)
     return public_key, secret_key
 
