@@ -1964,7 +1964,7 @@ class PartialTransaction(Transaction):
         privkey = ecc.ECPrivkey(privkey_bytes)
 
         public_key, secret_key = create_falcon_keypair(privkey.get_public_key_bytes())
-        sig = sign(pre_hash, secret_key)
+        sig = sign(secret_key, pre_hash)
         sig = bh2u(sig) + sighash_type
         return sig
 
