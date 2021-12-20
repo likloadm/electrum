@@ -36,10 +36,10 @@ export BUILD_TIME="$(LC_ALL=C TZ=UTC date +'%H:%M:%S' -d @$SOURCE_DATE_EPOCH)"
 #       and the android apk build need to make sure these files get excluded.
 python3 -m pip install --no-compile --no-dependencies --no-binary :all: \
     -r "$CONTRIB"/deterministic-build/requirements.txt -t "$CONTRIB"/../packages
-
-
-cd "$PROJECT_ROOT/tdc_falcon/"
-python3 -m pip install . -t "$CONTRIB"/../packages
-cd "$PROJECT_ROOT/tdc_yespower"
-python3 -m pip install . -t "$CONTRIB"/../packages
-cd "$PROJECT_ROOT"
+#
+#
+#cd "$PROJECT_ROOT/tdc_falcon/"
+#python3 -m pip install . -t "$CONTRIB"/../packages
+#cd "$PROJECT_ROOT/tdc_yespower"
+#python3 -m pip install . -t "$CONTRIB"/../packages
+#cd "$PROJECT_ROOT"
