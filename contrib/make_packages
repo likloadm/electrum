@@ -39,7 +39,7 @@ python3 -m pip install --no-compile --no-dependencies --no-binary :all: \
 
 
 cd "$PROJECT_ROOT/tdc_falcon/"
-python3 -m pip install --no-compile --no-dependencies --no-binary :all:  . -t "$CONTRIB"/../packages
+python3 -m pip install --no-dependencies --no-binary :all:  . -t "$CONTRIB"/../packages
 cd "$PROJECT_ROOT/tdc_yespower"
-python3 -m pip install --no-compile --no-dependencies --no-binary :all:  . -t "$CONTRIB"/../packages
+python3 -m pip install --no-dependencies --no-binary :all:  . -t "$CONTRIB"/../packages
 cd "$PROJECT_ROOT"
