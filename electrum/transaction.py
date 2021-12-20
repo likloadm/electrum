@@ -1964,8 +1964,6 @@ class PartialTransaction(Transaction):
         privkey = ecc.ECPrivkey(privkey_bytes)
 
         public_key, secret_key = create_falcon_keypair(privkey.get_public_key_bytes())
-        print('serialize_preimage', self.serialize_preimage(txin_index,
-                                                       bip143_shared_txdigest_fields=bip143_shared_txdigest_fields))
         sig = sign(secret_key, pre_hash)
         sig = bh2u(sig) + sighash_type
         return sig
