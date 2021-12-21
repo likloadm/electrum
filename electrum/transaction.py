@@ -48,7 +48,7 @@ from .bitcoin import (TYPE_ADDRESS, TYPE_SCRIPT, hash_160,
                       var_int, TOTAL_COIN_SUPPLY_LIMIT_IN_BTC, COIN,
                       int_to_hex, push_script, b58_address_to_hash160,
                       opcodes, add_number_to_script, base_decode, is_segwit_script_type,
-                      base_encode, construct_witness, construct_script, create_falcon_keypair, sign)
+                      base_encode, construct_witness, construct_script, create_falcon_keypair, sign, priv_to_pub)
 from .crypto import sha256d
 from .logging import get_logger
 
@@ -1961,9 +1961,9 @@ class PartialTransaction(Transaction):
         sighash_type = sighash.to_bytes(length=1, byteorder="big").hex()
         pre_hash = sha256d(bfh(self.serialize_preimage(txin_index,
                                                        bip143_shared_txdigest_fields=bip143_shared_txdigest_fields)))
-        privkey = ecc.ECPrivkey(privkey_bytes)
+        pubkey = priv_to_pub(privkey_bytes)
 
-        public_key, secret_key = create_falcon_keypair(privkey.get_public_key_bytes())
+        public_key, secret_key = create_falcon_keypair(pubkey)
         sig = sign(secret_key, pre_hash)
         sig = bh2u(sig) + sighash_type
         return sig

@@ -32,7 +32,7 @@ from functools import lru_cache
 from abc import ABC, abstractmethod
 
 from . import bitcoin, ecc, constants, bip32
-from .bitcoin import deserialize_privkey, serialize_privkey, BaseDecodeError
+from .bitcoin import deserialize_privkey, serialize_privkey, BaseDecodeError, priv_to_pub, DecodeBase58Check
 from .transaction import Transaction, PartialTransaction, PartialTxInput, PartialTxOutput, TxInput
 from .bip32 import (convert_bip32_path_to_list_of_uint32, BIP32_PRIME,
                     is_xpub, is_xprv, BIP32Node, normalize_bip32_derivation,
@@ -500,9 +500,13 @@ class Xpub(MasterPublicKeyMixin):
         assert self.xpub
         # try to derive ourselves from what we were given
         child_node1 = root_node.subkey_at_private_derivation(derivation_prefix)
-        child_pubkey_bytes1 = child_node1.eckey.get_public_key_bytes(compressed=True)
+        child_pubkey_bytes1 = priv_to_pub(child_node1.eckey)
         child_node2 = self.get_bip32_node_for_xpub()
-        child_pubkey_bytes2 = child_node2.eckey.get_public_key_bytes(compressed=True)
+        child_pubkey_bytes2 = child_node2.eckey
+        print(len(child_pubkey_bytes1.hex()))
+        print(len(child_pubkey_bytes2.hex()))
+        print(child_pubkey_bytes1.hex())
+        print(child_pubkey_bytes2.hex())
         if child_pubkey_bytes1 != child_pubkey_bytes2:
             raise Exception("(xpub, derivation_prefix, root_node) inconsistency")
         self.add_key_origin(derivation_prefix=derivation_prefix,
@@ -541,7 +545,7 @@ class Xpub(MasterPublicKeyMixin):
     @classmethod
     def get_pubkey_from_xpub(self, xpub: str, sequence) -> bytes:
         node = BIP32Node.from_xkey(xpub).subkey_at_public_derivation(sequence)
-        return node.eckey.get_public_key_bytes(compressed=True)
+        return node.eckey
 
 
 class BIP32_KeyStore(Xpub, Deterministic_KeyStore):
@@ -602,7 +606,6 @@ class BIP32_KeyStore(Xpub, Deterministic_KeyStore):
         self.add_key_origin(derivation_prefix=derivation_prefix, root_fingerprint=root_fingerprint)
 
     def add_xprv(self, xprv):
-        assert is_xprv(xprv)
         self.xprv = xprv
         self.add_xpub(bip32.xpub_from_xprv(xprv))
 
@@ -615,7 +618,7 @@ class BIP32_KeyStore(Xpub, Deterministic_KeyStore):
     def get_private_key(self, sequence: Sequence[int], password):
         xprv = self.get_master_private_key(password)
         node = BIP32Node.from_xkey(xprv).subkey_at_private_derivation(sequence)
-        pk = node.eckey.get_secret_bytes()
+        pk = node.eckey
         return pk, True
 
     def get_keypair(self, sequence, password):

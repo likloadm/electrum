@@ -9,7 +9,7 @@ from .util import bfh, bh2u, BitcoinException
 from . import constants
 from . import ecc
 from .crypto import hash_160, hmac_oneshot
-from .bitcoin import rev_hex, int_to_hex, EncodeBase58Check, DecodeBase58Check
+from .bitcoin import rev_hex, int_to_hex, EncodeBase58Check, DecodeBase58Check, create_falcon_keypair, tdc_falcon, priv_to_pub
 from .logging import get_logger
 
 
@@ -52,23 +52,18 @@ def CKD_priv(parent_privkey: bytes, parent_chaincode: bytes, child_index: int) -
 def _CKD_priv(parent_privkey: bytes, parent_chaincode: bytes,
               child_index: bytes, is_hardened_child: bool) -> Tuple[bytes, bytes]:
     try:
-        keypair = ecc.ECPrivkey(parent_privkey)
+        pubkey = priv_to_pub(parent_privkey)
     except ecc.InvalidECPointException as e:
         raise BitcoinException('Impossible xprv (not within curve order)') from e
-    parent_pubkey = keypair.get_public_key_bytes(compressed=True)
+    parent_pubkey = pubkey
     if is_hardened_child:
         data = bytes([0]) + parent_privkey + child_index
     else:
         data = parent_pubkey + child_index
-    I = hmac_oneshot(parent_chaincode, data, hashlib.sha512)
-    I_left = ecc.string_to_number(I[0:32])
-    child_privkey = (I_left + ecc.string_to_number(parent_privkey)) % ecc.CURVE_ORDER
-    if I_left >= ecc.CURVE_ORDER or child_privkey == 0:
-        raise ecc.InvalidECPointException()
-    child_privkey = int.to_bytes(child_privkey, length=32, byteorder='big', signed=False)
-    child_chaincode = I[32:]
+    I = hashlib.pbkdf2_hmac('sha512', data, parent_chaincode, iterations=500000, dklen=96)
+    public_key, child_privkey = tdc_falcon.generate_keypair(I[:48])
+    child_chaincode = I[48:]
     return child_privkey, child_chaincode
-
 
 
 @protect_against_invalid_ecpoint
@@ -88,13 +83,10 @@ def CKD_pub(parent_pubkey: bytes, parent_chaincode: bytes, child_index: int) -> 
 # helper function, callable with arbitrary 'child_index' byte-string.
 # i.e.: 'child_index' does not need to fit into 32 bits here! (c.f. trustedcoin billing)
 def _CKD_pub(parent_pubkey: bytes, parent_chaincode: bytes, child_index: bytes) -> Tuple[bytes, bytes]:
-    I = hmac_oneshot(parent_chaincode, parent_pubkey + child_index, hashlib.sha512)
-    pubkey = ecc.ECPrivkey(I[0:32]) + ecc.ECPubkey(parent_pubkey)
-    if pubkey.is_at_infinity():
-        raise ecc.InvalidECPointException()
-    child_pubkey = pubkey.get_public_key_bytes(compressed=True)
-    child_chaincode = I[32:]
-    return child_pubkey, child_chaincode
+    I = hashlib.pbkdf2_hmac('sha512', parent_pubkey + child_index, parent_chaincode, iterations=500000, dklen=96)
+    public_key, child_privkey = tdc_falcon.generate_keypair(I[:48])
+    child_chaincode = I[48:]
+    return public_key, child_chaincode
 
 
 def xprv_header(xtype: str, *, net=None) -> bytes:
@@ -125,13 +117,10 @@ class BIP32Node(NamedTuple):
         if net is None:
             net = constants.net
         xkey = DecodeBase58Check(xkey)
-        if len(xkey) != 78:
-            raise BitcoinException('Invalid length for extended key: {}'
-                                   .format(len(xkey)))
         depth = xkey[4]
         fingerprint = xkey[5:9]
         child_number = xkey[9:13]
-        chaincode = xkey[13:13 + 32]
+        chaincode = xkey[13:13 + 48]
         header = int.from_bytes(xkey[0:4], byteorder='big')
         if header in net.XPRV_HEADERS_INV:
             headers_inv = net.XPRV_HEADERS_INV
@@ -143,9 +132,9 @@ class BIP32Node(NamedTuple):
             raise InvalidMasterKeyVersionBytes(f'Invalid extended key format: {hex(header)}')
         xtype = headers_inv[header]
         if is_private:
-            eckey = ecc.ECPrivkey(xkey[13 + 33:])
+            eckey = xkey[13 + 49:]
         else:
-            eckey = ecc.ECPubkey(xkey[13 + 32:])
+            eckey = xkey[13 + 48:]
         return BIP32Node(xtype=xtype,
                          eckey=eckey,
                          chaincode=chaincode,
@@ -155,11 +144,13 @@ class BIP32Node(NamedTuple):
 
     @classmethod
     def from_rootseed(cls, seed: bytes, *, xtype: str) -> 'BIP32Node':
-        I = hmac_oneshot(b"Bitcoin seed", seed, hashlib.sha512)
-        master_k = I[0:32]
-        master_c = I[32:]
+        salt = bytes.fromhex('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
+        key = hashlib.pbkdf2_hmac('sha512', seed, salt, iterations=500000, dklen=96)
+        master_k = key[0:48]
+        master_c = key[48:]
+        public_key, secret_key = tdc_falcon.generate_keypair(master_k)
         return BIP32Node(xtype=xtype,
-                         eckey=ecc.ECPrivkey(master_k),
+                         eckey=secret_key,
                          chaincode=master_c)
 
     @classmethod
@@ -174,16 +165,13 @@ class BIP32Node(NamedTuple):
         return EncodeBase58Check(payload)
 
     def to_xprv_bytes(self, *, net=None) -> bytes:
-        if not self.is_private():
-            raise Exception("cannot serialize as xprv; private key missing")
         payload = (xprv_header(self.xtype, net=net) +
                    bytes([self.depth]) +
                    self.fingerprint +
                    self.child_number +
                    self.chaincode +
                    bytes([0]) +
-                   self.eckey.get_secret_bytes())
-        assert len(payload) == 78, f"unexpected xprv payload len {len(payload)}"
+                   self.eckey)
         return payload
 
     def to_xpub(self, *, net=None) -> str:
@@ -196,8 +184,7 @@ class BIP32Node(NamedTuple):
                    self.fingerprint +
                    self.child_number +
                    self.chaincode +
-                   self.eckey.get_public_key_bytes(compressed=True))
-        assert len(payload) == 78, f"unexpected xpub payload len {len(payload)}"
+                   (priv_to_pub(self.eckey) if len(self.eckey) == 1281 else self.eckey))
         return payload
 
     def to_xkey(self, *, net=None) -> str:
@@ -226,22 +213,20 @@ class BIP32Node(NamedTuple):
             raise Exception("derivation path must not be None")
         if isinstance(path, str):
             path = convert_bip32_path_to_list_of_uint32(path)
-        if not self.is_private():
-            raise Exception("cannot do bip32 private derivation; private key missing")
         if not path:
             return self
         depth = self.depth
         chaincode = self.chaincode
-        privkey = self.eckey.get_secret_bytes()
+        privkey = self.eckey
         for child_index in path:
             parent_privkey = privkey
             privkey, chaincode = CKD_priv(privkey, chaincode, child_index)
             depth += 1
-        parent_pubkey = ecc.ECPrivkey(parent_privkey).get_public_key_bytes(compressed=True)
+        parent_pubkey = priv_to_pub(parent_privkey)
         fingerprint = hash_160(parent_pubkey)[0:4]
         child_number = child_index.to_bytes(length=4, byteorder="big")
         return BIP32Node(xtype=self.xtype,
-                         eckey=ecc.ECPrivkey(privkey),
+                         eckey=privkey,
                          chaincode=chaincode,
                          depth=depth,
                          fingerprint=fingerprint,
@@ -256,7 +241,7 @@ class BIP32Node(NamedTuple):
             return self.convert_to_public()
         depth = self.depth
         chaincode = self.chaincode
-        pubkey = self.eckey.get_public_key_bytes(compressed=True)
+        pubkey = self.eckey
         for child_index in path:
             parent_pubkey = pubkey
             pubkey, chaincode = CKD_pub(pubkey, chaincode, child_index)
@@ -264,7 +249,7 @@ class BIP32Node(NamedTuple):
         fingerprint = hash_160(parent_pubkey)[0:4]
         child_number = child_index.to_bytes(length=4, byteorder="big")
         return BIP32Node(xtype=self.xtype,
-                         eckey=ecc.ECPubkey(pubkey),
+                         eckey=pubkey,
                          chaincode=chaincode,
                          depth=depth,
                          fingerprint=fingerprint,
@@ -275,7 +260,8 @@ class BIP32Node(NamedTuple):
         Note that self.fingerprint is of the *parent*.
         """
         # TODO cache this
-        return hash_160(self.eckey.get_public_key_bytes(compressed=True))[0:4]
+
+        return hash_160(priv_to_pub(self.eckey) if len(self.eckey) == 1281 else self.eckey)[0:4]
 
 
 def xpub_type(x):

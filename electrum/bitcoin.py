@@ -35,7 +35,7 @@ from . import ecc
 from .crypto import sha256d, sha256, hash_160
 
 import tdc_falcon
-from tdc_falcon import sign, verify
+from tdc_falcon import sign, verify, priv_to_pub
 if TYPE_CHECKING:
     from .network import Network
 
