@@ -9,7 +9,8 @@ from .util import bfh, bh2u, BitcoinException
 from . import constants
 from . import ecc
 from .crypto import hash_160, hmac_oneshot
-from .bitcoin import rev_hex, int_to_hex, EncodeBase58Check, DecodeBase58Check, create_falcon_keypair, tdc_falcon, priv_to_pub
+from .bitcoin import rev_hex, int_to_hex, EncodeBase58Check, DecodeBase58Check, create_falcon_keypair, tdc_falcon, \
+    priv_to_pub, PBKDF2_FALCON_ROUNDS
 from .logging import get_logger
 
 
@@ -60,7 +61,7 @@ def _CKD_priv(parent_privkey: bytes, parent_chaincode: bytes,
         data = bytes([0]) + parent_privkey + child_index
     else:
         data = parent_pubkey + child_index
-    I = hashlib.pbkdf2_hmac('sha512', data, parent_chaincode, iterations=500000, dklen=96)
+    I = hashlib.pbkdf2_hmac('sha512', data, parent_chaincode, iterations=PBKDF2_FALCON_ROUNDS, dklen=96)
     public_key, child_privkey = tdc_falcon.generate_keypair(I[:48])
     child_chaincode = I[48:]
     return child_privkey, child_chaincode
@@ -83,7 +84,7 @@ def CKD_pub(parent_pubkey: bytes, parent_chaincode: bytes, child_index: int) -> 
 # helper function, callable with arbitrary 'child_index' byte-string.
 # i.e.: 'child_index' does not need to fit into 32 bits here! (c.f. trustedcoin billing)
 def _CKD_pub(parent_pubkey: bytes, parent_chaincode: bytes, child_index: bytes) -> Tuple[bytes, bytes]:
-    I = hashlib.pbkdf2_hmac('sha512', parent_pubkey + child_index, parent_chaincode, iterations=500000, dklen=96)
+    I = hashlib.pbkdf2_hmac('sha512', parent_pubkey + child_index, parent_chaincode, iterations=PBKDF2_FALCON_ROUNDS, dklen=96)
     public_key, child_privkey = tdc_falcon.generate_keypair(I[:48])
     child_chaincode = I[48:]
     return public_key, child_chaincode
@@ -145,7 +146,7 @@ class BIP32Node(NamedTuple):
     @classmethod
     def from_rootseed(cls, seed: bytes, *, xtype: str) -> 'BIP32Node':
         salt = bytes.fromhex('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
-        key = hashlib.pbkdf2_hmac('sha512', seed, salt, iterations=500000, dklen=96)
+        key = hashlib.pbkdf2_hmac('sha512', seed, salt, iterations=PBKDF2_FALCON_ROUNDS, dklen=96)
         master_k = key[0:48]
         master_c = key[48:]
         public_key, secret_key = tdc_falcon.generate_keypair(master_k)
