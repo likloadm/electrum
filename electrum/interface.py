@@ -604,11 +604,22 @@ class Interface(Logger):
             size = max(size, 0)
         try:
             self._requested_chunks.add(index)
-            res = await self.session.send_request('blockchain.block.headers', [index * CHUNK_SIZE, size/2])
-            res2 = await self.session.send_request('blockchain.block.headers', [index * CHUNK_SIZE+size/2, size/2])
+            if(size%2==0):
+                print("CHUNK NUM", index * CHUNK_SIZE)            
+                res = await self.session.send_request('blockchain.block.headers', [index * CHUNK_SIZE, int(size/2)])
+                print("CHUNK2 NUM", index * CHUNK_SIZE+int(size/2))
+                res2 = await self.session.send_request('blockchain.block.headers', [index * CHUNK_SIZE+int(size/2), int(size/2)])
+            else:
+                print("CHUNK NUM", index * CHUNK_SIZE)            
+                res = await self.session.send_request('blockchain.block.headers', [index * CHUNK_SIZE, int(size/2)])
+                print("CHUNK2 NUM", index * CHUNK_SIZE+int(size/2))
+                res2 = await self.session.send_request('blockchain.block.headers', [index * CHUNK_SIZE+int(size/2), int(size/2)+1])
+                
             res['hex']+=res2['hex']
             res['count'] += res2['count']
             res['max'] = res2['max']
+
+
         finally:
             self._requested_chunks.discard(index)
         assert_dict_contains_field(res, field_name='count')
