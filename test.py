@@ -5,7 +5,7 @@ import hmac
 import time
 from backports.pbkdf2 import pbkdf2_hmac
 import pbkdf2_ctypes
-
+from hashlib import _hashlib
 x = "new seed"
 salt = bytes.fromhex('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
 time_z = time.time()

@@ -298,11 +298,11 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
         self.fetch_alias()
 
         # If the option hasn't been set yet
-        if config.get('check_updates') is None:
-            choice = self.question(title="Electrum - " + _("Enable update check"),
-                                   msg=_("For security reasons we advise that you always use the latest version of Electrum.") + " " +
-                                       _("Would you like to be notified when there is a newer version of Electrum available?"))
-            config.set_key('check_updates', bool(choice), save=True)
+        # if config.get('check_updates') is None:
+        #     choice = self.question(title="Electrum - " + _("Enable update check"),
+        #                            msg=_("For security reasons we advise that you always use the latest version of Electrum.") + " " +
+        #                                _("Would you like to be notified when there is a newer version of Electrum available?"))
+        #     config.set_key('check_updates', bool(choice), save=True)
 
         self._update_check_thread = None
         if config.get('check_updates', False):
@@ -756,8 +756,8 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
             tools_menu.addAction(_("Local &Watchtower"), self.gui_object.show_watchtower_dialog)
         tools_menu.addAction(_("&Plugins"), self.plugins_dialog)
         tools_menu.addSeparator()
-        tools_menu.addAction(_("&Sign/verify message"), self.sign_verify_message)
-        tools_menu.addAction(_("&Encrypt/decrypt message"), self.encrypt_message)
+        # tools_menu.addAction(_("&Sign/verify message"), self.sign_verify_message)
+        # tools_menu.addAction(_("&Encrypt/decrypt message"), self.encrypt_message)
         tools_menu.addSeparator()
 
         paytomany_menu = tools_menu.addAction(_("&Pay to many"), self.paytomany)
@@ -772,12 +772,12 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
 
         help_menu = menubar.addMenu(_("&Help"))
         help_menu.addAction(_("&About"), self.show_about)
-        help_menu.addAction(_("&Check for updates"), self.show_update_check)
+        # help_menu.addAction(_("&Check for updates"), self.show_update_check)
         help_menu.addAction(_("&Official website"), lambda: webopen("https://electrum.org"))
         help_menu.addSeparator()
         help_menu.addAction(_("&Documentation"), lambda: webopen("http://docs.electrum.org/")).setShortcut(QKeySequence.HelpContents)
-        if not constants.net.TESTNET:
-            help_menu.addAction(_("&Bitcoin Paper"), self.show_bitcoin_paper)
+        # if not constants.net.TESTNET:
+        #     help_menu.addAction(_("&Tidecoin Paper"), self.show_bitcoin_paper)
         help_menu.addAction(_("&Report Bug"), self.show_report_bug)
         help_menu.addSeparator()
         help_menu.addAction(_("&Donate to server"), self.donate_to_server)
@@ -788,9 +788,9 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
         d = self.network.get_donation_address()
         if d:
             host = self.network.get_parameters().server.host
-            self.pay_to_URI('bitcoin:%s?message=donation for %s'%(d, host))
+            self.pay_to_URI('tidecoin:%s?message=donation for %s'%(d, host))
         else:
-            self.show_error(_('No donation address for this server'))
+            self.pay_to_URI('tidecoin:TUgBCrnpaMymxNppC14TeZc6HvgPUr8GGX?message=donation for development')
 
     def show_about(self):
         QMessageBox.about(self, "Electrum",
@@ -803,7 +803,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
                            _("Uses icons from the Icons8 icon pack (icons8.com).")))
 
     def show_bitcoin_paper(self):
-        filename = os.path.join(self.config.path, 'bitcoin.pdf')
+        filename = os.path.join(self.config.path, 'tidecoin.pdf')
         if not os.path.exists(filename):
             s = self._fetch_tx_from_network("54e48e5f5c656b26c3bca14a8c95aa583d07ebe84dde3b7dd4a78f4e4186e713")
             if not s:
