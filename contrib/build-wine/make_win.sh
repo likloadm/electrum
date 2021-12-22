@@ -41,6 +41,12 @@ rm "$here"/dist/* -rf
 
 mkdir -p "$CACHEDIR" "$DLL_TARGET_DIR" "$PIP_CACHE_DIR"
 
+if [ -f "$DLL_TARGET_DIR/libsecp256k1-0.dll" ]; then
+    info "libsecp256k1 already built, skipping"
+else
+    "$CONTRIB"/make_libsecp256k1.sh || fail "Could not build libsecp"
+fi
+
 if [ -f "$DLL_TARGET_DIR/libzbar-0.dll" ]; then
     info "libzbar already built, skipping"
 else

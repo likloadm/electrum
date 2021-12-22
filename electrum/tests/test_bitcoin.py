@@ -22,6 +22,8 @@ from electrum.util import bfh, bh2u, InvalidPassword, randrange
 from electrum.storage import WalletStorage
 from electrum.keystore import xtype_from_derivation
 
+from electrum import ecc_fast
+
 from . import ElectrumTestCase
 from . import TestCaseForTestnet
 from . import FAST_TESTS

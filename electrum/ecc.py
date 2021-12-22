@@ -36,6 +36,7 @@ from .util import bfh, bh2u, assert_bytes, to_bytes, InvalidPassword, profiler, 
 from .crypto import (sha256d, aes_encrypt_with_iv, aes_decrypt_with_iv, hmac_oneshot)
 from . import constants
 from .logging import get_logger
+from .ecc_fast import _libsecp256k1, SECP256K1_EC_UNCOMPRESSED
 
 _logger = get_logger(__name__)
 
@@ -349,6 +350,9 @@ class ECPubkey(object):
         except:
             return False
 
+
+GENERATOR = ECPubkey(bytes.fromhex('0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'
+                                   '483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8'))
 CURVE_ORDER = 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFE_BAAEDCE6_AF48A03B_BFD25E8C_D0364141
 POINT_AT_INFINITY = ECPubkey(None)
 
