@@ -487,7 +487,7 @@ Builder.load_string('''
 
 <ShowXpubDialog>
     xpub: ''
-    message: _('Here is your master public key. Share it with your cosigners.')
+    message: _('Here is your master public key. Do not share it, you can lose your funds.')
     BigLabel:
         text: "MASTER PUBLIC KEY"
     GridLayout
