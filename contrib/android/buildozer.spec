@@ -46,8 +46,7 @@ requirements =
     openssl,
     plyer,
     kivy,
-    libffi,
-    libsecp256k1,
+    libffi
     cryptography,
     tdc_falcon,
     tdc_yespower
