@@ -4,12 +4,6 @@
 [submodule "electrum/gui/kivy/theming/atlas"]
 	path = electrum/gui/kivy/theming/atlas
 	url = https://github.com/spesmilo/electrum-kivy-atlas
-[submodule "tdc_yespower"]
-	path = tdc_yespower
-	url = https://github.com/yarsawyer/tdc_yespower
-[submodule "tdc_falcon"]
-	path = tdc_falcon
-	url = https://github.com/yarsawyer/tdc_falcon
 [submodule "contrib/deterministic-build/electrum-locale"]
 	path = contrib/deterministic-build/electrum-locale
 	url = https://github.com/spesmilo/electrum-locale

@@ -166,13 +166,6 @@ info "Installing dependencies specific to binaries..."
 python3 -m pip install --no-dependencies --no-warn-script-location -Ir ./contrib/deterministic-build/requirements-binaries-mac.txt \
     || fail "Could not install dependencies specific to binaries"
 
-
-cd "$PROJECT_ROOT/tdc_falcon/"
-CFLAGS=-Wno-error=implicit-function-declaration python3 -m pip install  --no-dependencies --no-warn-script-location .
-cd "$PROJECT_ROOT/tdc_yespower"
-CFLAGS=-Wno-error=implicit-function-declaration python3 -m pip install  --no-dependencies --no-warn-script-location .
-cd "$PROJECT_ROOT"
-
 info "Building $PACKAGE..."
 python3 -m pip install --no-dependencies --no-warn-script-location . > /dev/null || fail "Could not build $PACKAGE"
 
