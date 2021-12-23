@@ -7,6 +7,7 @@ Electron Cash - Lightweight Bitcoin Cash client
   Author: Electron Cash Developers
   Language: Python
   Homepage: https://electroncash.org/
+  
 
 
 .. image:: https://d322cqt584bo4o.cloudfront.net/electron-cash/localized.svg
