@@ -52,10 +52,6 @@ requirements =
     tdc_falcon,
     tdc_yespower
 
-requirements.source.tdc_falcon = %(source.dir)s/tdc_falcon/
-requirements.source.tdc_yespower = %(source.dir)s/tdc_yespower/
-
-
 # (str) Presplash of the application
 #presplash.filename = %(source.dir)s/gui/kivy/theming/splash.png
 presplash.filename = %(source.dir)s/electrum/gui/icons/electrum_presplash.png
