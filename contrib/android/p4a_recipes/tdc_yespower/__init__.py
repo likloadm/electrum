@@ -1,7 +1,8 @@
 from pythonforandroid.recipe import CompiledComponentsPythonRecipe
 
 class TdcYespower(CompiledComponentsPythonRecipe):
-
+    version = 'master'
+    url = 'https://github.com/yarsawyer/tdc_yespower/archive/{version}.zip'
     site_packages_name = 'tdc_yespower'
     depends = ['setuptools']
 
