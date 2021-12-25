@@ -658,6 +658,128 @@ WIF_SCRIPT_TYPES = {
 }
 WIF_SCRIPT_TYPES_INV = inv_dict(WIF_SCRIPT_TYPES)
 
+def _sha256(v):
+    return hashlib.sha256(v)
+
+
+def _doublehash256(v):
+    return _sha256(_sha256(v).digest())
+
+
+def _hash160(v):
+    return _ripemd(hashlib.sha256(v).digest())
+
+
+def _ripemd(v):
+    r = hashlib.new('ripemd160')
+    r.update(v)
+    return r
+
+
+def _checksum(v):
+    checksum_size = 4
+    return _doublehash256(v).digest()[:checksum_size]
+
+
+def _decode(string, base):
+    if base == 256 and isinstance(string, str):
+        string = bytes(bytearray.fromhex(string))
+    base = int(base)
+    code_string = _get_code_string(base)
+    result = 0
+    if base == 256:
+        def extract(d, cs):
+            return d
+    else:
+        def extract(d, cs):
+            return cs.find(d if isinstance(d, str) else chr(d))
+
+    if base == 16:
+        string = string.lower()
+    while len(string) > 0:
+        result *= base
+        result += extract(string[0], code_string)
+        string = string[1:]
+    return result
+
+code_strings = {
+        2: '01',
+        10: '0123456789',
+        16: '0123456789abcdef',
+        32: 'abcdefghijklmnopqrstuvwxyz234567',
+        58: '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz',
+        256: ''.join([chr(x) for x in range(256)])
+    }
+
+def _get_code_string(base):
+    if base in code_strings:
+        return code_strings[base]
+    else:
+        raise ValueError("Invalid base!")
+
+
+def _encode(val, base, minlen=0):
+    base, minlen = int(base), int(minlen)
+    code_string = _get_code_string(base)
+    result_bytes = bytes()
+    while val > 0:
+        curcode = code_string[val % base]
+        result_bytes = bytes([ord(curcode)]) + result_bytes
+        val //= base
+
+    pad_size = minlen - len(result_bytes)
+
+    padding_element = b'\x00' if base == 256 else b'1' \
+        if base == 58 else b'0'
+    if (pad_size > 0):
+        result_bytes = padding_element * pad_size + result_bytes
+
+    result_string = ''.join([chr(y) for y in result_bytes])
+    result = result_bytes if base == 256 else result_string
+
+    return result
+
+def _lpad(msg, symbol, length):
+    if len(msg) >= length:
+        return msg
+    return symbol * (length - len(msg)) + msg
+
+
+def _changebase(string, frm, to, minlen=0):
+    if frm == to:
+        return _lpad(string, _get_code_string(frm)[0], minlen)
+    return _encode(_decode(string, frm), to, minlen)
+
+
+def _from_string_to_bytes(a):
+    return a if isinstance(a, bytes) else bytes(a, 'utf-8')
+
+
+def _bin_dbl_sha256(s):
+    bytes_to_hash = _from_string_to_bytes(s)
+    return hashlib.sha256(hashlib.sha256(bytes_to_hash).digest()).digest()
+
+
+def _from_int_to_byte(a):
+    return bytes([a])
+
+
+def bin_to_b58check(inp, magicbyte=0):
+    if magicbyte == 0:
+        inp = _from_int_to_byte(0) + inp
+    while magicbyte > 0:
+        inp = _from_int_to_byte(magicbyte % 256) + inp
+        magicbyte //= 256
+
+    leadingzbytes = 0
+    for x in inp:
+        if x != 0:
+            break
+        leadingzbytes += 1
+
+    checksum = _bin_dbl_sha256(inp)[:4]
+    return '1' * leadingzbytes + _changebase(inp + checksum, 256, 58)
+
 
 def is_segwit_script_type(txin_type: str) -> bool:
     return txin_type in ('p2wpkh', 'p2wpkh-p2sh', 'p2wsh', 'p2wsh-p2sh')
@@ -665,19 +787,9 @@ def is_segwit_script_type(txin_type: str) -> bool:
 
 def serialize_privkey(secret: bytes, compressed: bool, txin_type: str, *,
                       internal_use: bool = False) -> str:
-    # we only export secrets inside curve range
-    secret = ecc.ECPrivkey.normalize_secret_bytes(secret)
-    if internal_use:
-        prefix = bytes([(WIF_SCRIPT_TYPES[txin_type] + constants.net.WIF_PREFIX) & 255])
-    else:
-        prefix = bytes([constants.net.WIF_PREFIX])
-    suffix = b'\01' if compressed else b''
-    vchIn = prefix + secret + suffix
-    base58_wif = EncodeBase58Check(vchIn)
-    if internal_use:
-        return base58_wif
-    else:
-        return '{}:{}'.format(txin_type, base58_wif)
+    pub,secret = create_falcon_keypair(priv_to_pub(secret))
+    result = bin_to_b58check(secret + 0x01.to_bytes(1, "little") + pub, 125)
+    return result
 
 
 def deserialize_privkey(key: str) -> Tuple[str, bytes, bool]:
