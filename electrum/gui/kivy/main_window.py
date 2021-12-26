@@ -807,9 +807,9 @@ class ElectrumWindow(App, Logger):
             popup = Builder.load_file(KIVY_GUI_PATH + f'/uix/ui_screens/{name}.kv')
             master_public_keys_layout = popup.ids.master_public_keys
             for xpub in self.wallet.get_master_public_keys()[1:]:
-                master_public_keys_layout.add_widget(TopLabel(text=_('Master Public Key')))
+                master_public_keys_layout.add_widget(TopLabel(text=_('Master Key')))
                 ref = RefLabel()
-                ref.name = _('Master Public Key')
+                ref.name = _('Master Key')
                 ref.data = xpub
                 master_public_keys_layout.add_widget(ref)
             popup.open()

@@ -1022,11 +1022,11 @@ class ShowXpubDialog(WizardDialog):
         self.app._clipboard.copy(self.xpub)
 
     def do_share(self):
-        self.app.do_share(self.xpub, _("Master Public Key"))
+        self.app.do_share(self.xpub, _("Master Key"))
 
     def do_qr(self):
         from .qr_dialog import QRDialog
-        popup = QRDialog(_("Master Public Key"), self.xpub, True)
+        popup = QRDialog(_("Master Key"), self.xpub, True)
         popup.open()
 
 

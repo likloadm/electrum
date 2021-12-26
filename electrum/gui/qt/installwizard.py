@@ -726,7 +726,7 @@ class InstallWizard(QDialog, MessageBoxMixin, BaseWizard):
             config=self.config,
         )
         vbox.addLayout(layout.layout())
-        self.exec_layout(vbox, _('Master Public Key'))
+        self.exec_layout(vbox, _('Master Key'))
         return None
 
     def init_network(self, network: 'Network'):
