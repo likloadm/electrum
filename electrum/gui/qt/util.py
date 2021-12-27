@@ -1110,7 +1110,6 @@ class IconLabel(QWidget):
         self.icon.repaint()  # macOS hack for #6269
 
 def get_default_language():
-    name = QLocale.system().name()
     return 'en_UK'
 
 
