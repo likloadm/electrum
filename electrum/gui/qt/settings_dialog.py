@@ -79,6 +79,7 @@ class SettingsDialog(WindowModalDialog):
             for w in [lang_combo, lang_label]: w.setEnabled(False)
         def on_lang(x):
             lang_request = list(languages.keys())[lang_combo.currentIndex()]
+            print(lang_request)
             if lang_request != self.config.get('language'):
                 self.config.set_key("language", lang_request, True)
                 self.need_restart = True

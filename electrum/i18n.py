@@ -81,6 +81,7 @@ languages = {
     'tr_TR': _('Turkish'),
     'uk_UA': _('Ukrainian'),
     'vi_VN': _('Vietnamese'),
+    'ko_KR': _('Korean'),
     'zh_CN': _('Chinese Simplified'),
     'zh_TW': _('Chinese Traditional')
 }

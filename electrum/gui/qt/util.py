@@ -1111,7 +1111,7 @@ class IconLabel(QWidget):
 
 def get_default_language():
     name = QLocale.system().name()
-    return name if name in languages else 'en_UK'
+    return 'en_UK'
 
 
 def char_width_in_lineedit() -> int:
