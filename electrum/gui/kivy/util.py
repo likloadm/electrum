@@ -29,4 +29,4 @@ def get_default_language() -> str:
     from jnius import autoclass
     Locale = autoclass("java.util.Locale")
     lang = str(Locale.getDefault().toString())
-    return lang if lang else 'en_UK'
+    return 'en_UK'
