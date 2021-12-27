@@ -77,11 +77,11 @@ Factory.register('TabbedCarousel', module='electrum.gui.kivy.uix.screens')
 # inside markup.
 from kivy.core.text import Label
 Label.register(
-    'Roboto',
-    KIVY_GUI_PATH + '/data/fonts/Roboto.ttf',
-    KIVY_GUI_PATH + '/data/fonts/Roboto.ttf',
-    KIVY_GUI_PATH + '/data/fonts/Roboto-Bold.ttf',
-    KIVY_GUI_PATH + '/data/fonts/Roboto-Bold.ttf',
+    'DroidSans',
+    KIVY_GUI_PATH + '/data/fonts/DroidSans.ttf',
+    KIVY_GUI_PATH + '/data/fonts/DroidSans.ttf',
+    KIVY_GUI_PATH + '/data/fonts/DroidSans-Bold.ttf',
+    KIVY_GUI_PATH + '/data/fonts/DroidSans-Bold.ttf',
 )
 
 
