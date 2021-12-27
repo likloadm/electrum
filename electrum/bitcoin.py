@@ -819,23 +819,14 @@ def deserialize_privkey(key: str) -> Tuple[str, bytes, bool]:
         if vch[0] != constants.net.WIF_PREFIX:
             raise BitcoinException('invalid prefix ({}) for WIF key (2)'.format(vch[0]))
 
-    if len(vch) not in [33, 34]:
-        raise BitcoinException('invalid vch len for WIF key: {}'.format(len(vch)))
     compressed = False
-    if len(vch) == 34:
-        if vch[33] == 0x01:
-            compressed = True
-        else:
-            raise BitcoinException(f'invalid WIF key. length suggests compressed pubkey, '
-                                   f'but last byte is {vch[33]} != 0x01')
 
     if is_segwit_script_type(txin_type) and not compressed:
         raise BitcoinException('only compressed public keys can be used in segwit scripts')
 
-    secret_bytes = vch[1:33]
-    # we accept secrets outside curve range; cast into range here:
-    secret_bytes = ecc.ECPrivkey.normalize_secret_bytes(secret_bytes)
-    return txin_type, secret_bytes, compressed
+    pub, secret = create_falcon_keypair(priv_to_pub(vch))
+    result = bin_to_b58check(secret + 0x01.to_bytes(1, "little") + pub, 125)
+    return txin_type, result, compressed
 
 
 def is_compressed_privkey(sec: str) -> bool:

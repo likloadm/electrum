@@ -153,6 +153,8 @@ else
 fi
 cp "$PROJECT_ROOT"/electrum/libusb-1.0.dylib "$CONTRIB"/osx
 
+CFLAGS=-Wno-error=implicit-function-declaration python3 -m pip install --no-dependencies --no-warn-script-location tdc_falcon
+CFLAGS=-Wno-error=implicit-function-declaration python3 -m pip install --no-dependencies --no-warn-script-location tdc_yespower
 
 info "Installing requirements..."
 python3 -m pip install --no-dependencies --no-warn-script-location -Ir ./contrib/deterministic-build/requirements.txt \
