@@ -364,6 +364,7 @@ Builder.load_string('''
             on_text: Clock.schedule_once(root.on_text)
         SeedLabel:
             text: root.message
+            font_size: 10
         BoxLayout:
             id: suggestions
             height: '35dp'
