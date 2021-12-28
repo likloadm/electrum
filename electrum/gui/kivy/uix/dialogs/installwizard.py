@@ -361,7 +361,7 @@ Builder.load_string('''
         SeedButton:
             id: text_input_seed
             text: ''
-            font_size: 25
+            height: '220dp'
             on_text: Clock.schedule_once(root.on_text)
         SeedLabel:
             text: root.message
