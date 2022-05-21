@@ -50,7 +50,9 @@ requirements =
     libsecp256k1,
     cryptography,
     tdc_falcon,
-    tdc_yespower
+    tdc_yespower,
+    kawpow,
+    arl_dilithium
 
 # (str) Presplash of the application
 #presplash.filename = %(source.dir)s/gui/kivy/theming/splash.png
