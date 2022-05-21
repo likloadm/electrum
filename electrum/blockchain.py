@@ -34,8 +34,8 @@ from .util import bfh, bh2u, with_lock
 from .simple_config import SimpleConfig
 from .logging import get_logger, Logger
 import tdc_yespower
-import kawpow
-import arl_dilithium
+# import kawpow
+# import arl_dilithium
 
 _logger = get_logger(__name__)
 
