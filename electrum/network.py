@@ -1,4 +1,4 @@
-# Electrum - Lightweight Tidecoin Client
+# Electrum - Lightweight Arielcoin Client
 # Copyright (c) 2011-2016 Thomas Voegtlin
 #
 # Permission is hereby granted, free of charge, to any person
@@ -1067,7 +1067,7 @@ class Network(Logger, NetworkRetryManager[ServerAddr]):
             r"dust":
                 (_("Transaction could not be broadcast due to dust outputs.\n"
                    "Some of the outputs are too small in value, probably lower than 1000 tidoshi.\n"
-                   "Check the units, make sure you haven't confused e.g. mTDC and TDC.")),
+                   "Check the units, make sure you haven't confused e.g. pearls and ARL.")),
             r"multi-op-return": _("The transaction was rejected because it contains multiple OP_RETURN outputs."),
         }
         for substring in policy_error_messages:

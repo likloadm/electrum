@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Electrum - lightweight Tidecoin client
+# Electrum - lightweight Arielcoin client
 # Copyright (C) 2011 thomasv@gitorious
 #
 # Permission is hereby granted, free of charge, to any person
@@ -34,8 +34,8 @@ from . import constants
 from . import ecc
 from .crypto import sha256d, sha256, hash_160
 
-import tdc_falcon
-from tdc_falcon import sign, verify, priv_to_pub
+import arl_dilithium
+from arl_dilithium import sign, verify, priv_to_pub
 if TYPE_CHECKING:
     from .network import Network
 
@@ -54,7 +54,7 @@ NLOCKTIME_MAX = 2 ** 32 - 1
 TYPE_ADDRESS = 0
 TYPE_PUBKEY  = 1
 TYPE_SCRIPT  = 2
-PBKDF2_FALCON_ROUNDS = 20480
+PBKDF2_DILITHIUM_ROUNDS = 20480
 
 class opcodes(IntEnum):
     # push value
@@ -197,12 +197,12 @@ class opcodes(IntEnum):
         return bytes([self]).hex()
 
 
-def create_falcon_keypair(passwd):
+def create_dilithium_keypair(passwd):
     if isinstance(passwd, str):
         passwd = bfh(passwd)
     salt = bytes.fromhex('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
-    key = hashlib.pbkdf2_hmac('sha512', passwd, salt, iterations=PBKDF2_FALCON_ROUNDS, dklen=48)
-    public_key, secret_key = tdc_falcon.generate_keypair(key)
+    key = hashlib.pbkdf2_hmac('sha512', passwd, salt, iterations=PBKDF2_DILITHIUM_ROUNDS, dklen=32)
+    public_key, secret_key = arl_dilithium.generate_keypair(key)
     return public_key, secret_key
 
 
@@ -226,8 +226,9 @@ def int_to_hex(i: int, length: int=1) -> str:
     s = "0"*(2*length - len(s)) + s
     return rev_hex(s)
 
+
 def script_num_to_hex(i: int) -> str:
-    """See CScriptNum in Tidecoin Core.
+    """See CScriptNum in Arielcoin Core.
     Encodes an integer as hex, to be used in script.
 
     ported from https://github.com/bitcoin/bitcoin/blob/8cbc5c4be4be22aca228074f087a374a7ec38be8/src/script/script.h#L326
@@ -408,7 +409,7 @@ def hash160_to_p2sh(h160: bytes, *, net=None) -> str:
 
 def public_key_to_p2pkh(public_key: bytes, *, net=None) -> str:
     if net is None: net = constants.net
-    public_key, secret_key = create_falcon_keypair(public_key)
+    public_key, secret_key = create_dilithium_keypair(public_key)
     return hash160_to_p2pkh(hash_160(0x07.to_bytes(1, "little") + public_key), net=net)
 
 def hash_to_segwit_addr(h: bytes, witver: int, *, net=None) -> str:
@@ -419,7 +420,7 @@ def hash_to_segwit_addr(h: bytes, witver: int, *, net=None) -> str:
 
 def public_key_to_p2wpkh(public_key: bytes, *, net=None) -> str:
     if net is None: net = constants.net
-    public_key, secret_key = create_falcon_keypair(public_key)
+    public_key, secret_key = create_dilithium_keypair(public_key)
     # print(hash_to_segwit_addr(hash_160(0x07.to_bytes(1, "little") + public_key), witver=0, net=net))
     return hash_to_segwit_addr(hash_160(0x07.to_bytes(1, "little") + public_key), witver=0, net=net)
 
@@ -532,7 +533,7 @@ def script_to_scripthash(script: str) -> str:
     return bh2u(bytes(reversed(h)))
 
 def public_key_to_p2pk_script(pubkey: str) -> str:
-    pubkey, secret_key = create_falcon_keypair(pubkey)
+    pubkey, secret_key = create_dilithium_keypair(pubkey)
     return construct_script([0x07.to_bytes(1, "little") + pubkey, opcodes.OP_CHECKSIG])
 
 def pubkeyhash_to_p2pkh_script(pubkey_hash160: str) -> str:
@@ -575,7 +576,7 @@ def base_encode(v: bytes, *, base: int) -> str:
         result.append(chars[mod])
         long_value = div
     result.append(chars[long_value])
-    # Tidecoin does a little leading-zero-compression:
+    # Arielcoin does a little leading-zero-compression:
     # leading 0-bytes in the input become leading-1s
     nPad = 0
     for c in v:
@@ -787,7 +788,7 @@ def is_segwit_script_type(txin_type: str) -> bool:
 
 def serialize_privkey(secret: bytes, compressed: bool, txin_type: str, *,
                       internal_use: bool = False) -> str:
-    pub,secret = create_falcon_keypair(priv_to_pub(secret))
+    pub,secret = create_dilithium_keypair(priv_to_pub(secret))
     result = bin_to_b58check(secret + 0x01.to_bytes(1, "little") + pub, 125)
     return result
 
@@ -824,7 +825,7 @@ def deserialize_privkey(key: str) -> Tuple[str, bytes, bool]:
     if is_segwit_script_type(txin_type) and not compressed:
         raise BitcoinException('only compressed public keys can be used in segwit scripts')
 
-    pub, secret = create_falcon_keypair(priv_to_pub(vch))
+    pub, secret = create_dilithium_keypair(priv_to_pub(vch))
     result = bin_to_b58check(secret + 0x01.to_bytes(1, "little") + pub, 125)
     return txin_type, result, compressed
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Tidecoin client
+# Electrum - lightweight Arielcoin client
 # Copyright (C) 2011 Thomas Voegtlin
 #
 # Permission is hereby granted, free of charge, to any person
@@ -48,7 +48,7 @@ from .bitcoin import (TYPE_ADDRESS, TYPE_SCRIPT, hash_160,
                       var_int, TOTAL_COIN_SUPPLY_LIMIT_IN_BTC, COIN,
                       int_to_hex, push_script, b58_address_to_hash160,
                       opcodes, add_number_to_script, base_decode, is_segwit_script_type,
-                      base_encode, construct_witness, construct_script, create_falcon_keypair, sign, priv_to_pub)
+                      base_encode, construct_witness, construct_script, create_dilithium_keypair, sign, priv_to_pub)
 from .crypto import sha256d
 from .logging import get_logger
 
@@ -265,7 +265,7 @@ class TxInput:
 
 
 class BCDataStream(object):
-    """Workalike python implementation of Tidecoin's CDataStream class."""
+    """Workalike python implementation of Arielcoin's CDataStream class."""
 
     def __init__(self):
         self.input = None  # type: Optional[bytearray]
@@ -287,7 +287,7 @@ class BCDataStream(object):
         # 0 to 252 :  1-byte-length followed by bytes (if any)
         # 253 to 65,535 : byte'253' 2-byte-length followed by bytes
         # 65,536 to 4,294,967,295 : byte '254' 4-byte-length followed by bytes
-        # ... and the Tidecoin client is coded to understand:
+        # ... and the Arielcoin client is coded to understand:
         # greater than 4,294,967,295 : byte '255' 8-byte-length followed by bytes of string
         # ... but I don't think it actually handles any strings that big.
         if self.input is None:
@@ -693,9 +693,9 @@ class Transaction:
             #       e.g. from a hw signer cannot be expected to have a low R.
             sig_list = ["00" * 72] * num_sig
         else:
-            pk_list = [(0x07.to_bytes(1, "little")+create_falcon_keypair(pubkey)[0]).hex() for pubkey in txin.pubkeys]
+            pk_list = [(0x07.to_bytes(1, "little") + create_dilithium_keypair(pubkey)[0]).hex() for pubkey in txin.pubkeys]
             #todo
-            sig_list = [txin.part_sigs.get(0x07.to_bytes(1, "little")+create_falcon_keypair(pubkey)[0], b'').hex() for pubkey in txin.pubkeys]
+            sig_list = [txin.part_sigs.get(0x07.to_bytes(1, "little") + create_dilithium_keypair(pubkey)[0], b'').hex() for pubkey in txin.pubkeys]
             if txin.is_complete():
                 sig_list = [sig for sig in sig_list if sig]
         return pk_list, sig_list
@@ -796,7 +796,7 @@ class Transaction:
             if opcodes.OP_CODESEPARATOR in [x[0] for x in script_GetOp(txin.redeem_script)]:
                 raise Exception('OP_CODESEPARATOR black magic is not supported')
             return txin.redeem_script.hex()
-        pubkeys = [(0x07.to_bytes(1, "little")+create_falcon_keypair(pubkey)[0]).hex() for pubkey in txin.pubkeys]
+        pubkeys = [(0x07.to_bytes(1, "little") + create_dilithium_keypair(pubkey)[0]).hex() for pubkey in txin.pubkeys]
         if txin.script_type in ['p2sh', 'p2wsh', 'p2wsh-p2sh']:
             return multisig_script(pubkeys, txin.num_sig)
         elif txin.script_type in ['p2pkh', 'p2wpkh', 'p2wpkh-p2sh']:
@@ -846,7 +846,7 @@ class Transaction:
         return bfh(self.serialize())
 
     def serialize_to_network(self, *, estimate_size=False, include_sigs=True, force_legacy=False) -> str:
-        """Serialize the transaction as used on the Tidecoin network, into hex.
+        """Serialize the transaction as used on the Arielcoin network, into hex.
         `include_sigs` signals whether to include scriptSigs and witnesses.
         `force_legacy` signals to use the pre-segwit format
         note: (not include_sigs) implies force_legacy
@@ -1963,7 +1963,7 @@ class PartialTransaction(Transaction):
                                                        bip143_shared_txdigest_fields=bip143_shared_txdigest_fields)))
         pubkey = priv_to_pub(privkey_bytes)
 
-        public_key, secret_key = create_falcon_keypair(pubkey)
+        public_key, secret_key = create_dilithium_keypair(pubkey)
         sig = sign(secret_key, pre_hash)
         sig = bh2u(sig) + sighash_type
         return sig
@@ -2042,7 +2042,7 @@ class PartialTransaction(Transaction):
 
     def add_signature_to_txin(self, *, txin_idx: int, signing_pubkey: str, sig: str):
         txin = self._inputs[txin_idx]
-        public_key, secret_key = create_falcon_keypair(bfh(signing_pubkey))
+        public_key, secret_key = create_dilithium_keypair(bfh(signing_pubkey))
         txin.part_sigs[0x07.to_bytes(1, "little")+public_key] = bfh(sig)
         # force re-serialization
         txin.script_sig = None

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Tidecoin client
+# Electrum - lightweight Arielcoin client
 # Copyright (C) 2011 thomasv@gitorious
 #
 # Permission is hereby granted, free of charge, to any person
@@ -359,7 +359,7 @@ class Interface(Logger):
         assert network.config.path
         self.cert_path = _get_cert_path_for_host(config=network.config, host=self.host)
         self.blockchain = None  # type: Optional[Blockchain]
-        self._requested_chunks = set()  # type: Set[int]
+        self._requested_chunks = set()  # type: Set[Tuple[int, int]]
         self.network = network
         self.proxy = MySocksProxy.from_proxy_dict(proxy)
         self.session = None  # type: Optional[NotificationSession]
@@ -594,48 +594,40 @@ class Interface(Logger):
     async def request_chunk(self, height: int, tip=None, *, can_return_early=False):
         if not is_non_negative_integer(height):
             raise Exception(f"{repr(height)} is not a block height")
-        index = height // CHUNK_SIZE
-        if can_return_early and index in self._requested_chunks:
+
+        ret = False
+
+        for mi, ma in self._requested_chunks:
+            if mi <= height < ma:
+                ret = True
+                break
+
+        if can_return_early and ret:
             return
         self.logger.info(f"requesting chunk from height {height}")
-        size = CHUNK_SIZE
+        size = 2016
         if tip is not None:
-            size = min(size, tip - index * CHUNK_SIZE + 1)
+            size = min(size, tip - height + 1)
             size = max(size, 0)
         try:
-            self._requested_chunks.add(index)
-            if(size%2==0):
-                print("CHUNK NUM", index * CHUNK_SIZE)            
-                res = await self.session.send_request('blockchain.block.headers', [index * CHUNK_SIZE, int(size/2)])
-                print("CHUNK2 NUM", index * CHUNK_SIZE+int(size/2))
-                res2 = await self.session.send_request('blockchain.block.headers', [index * CHUNK_SIZE+int(size/2), int(size/2)])
-            else:
-                print("CHUNK NUM", index * CHUNK_SIZE)            
-                res = await self.session.send_request('blockchain.block.headers', [index * CHUNK_SIZE, int(size/2)])
-                print("CHUNK2 NUM", index * CHUNK_SIZE+int(size/2))
-                res2 = await self.session.send_request('blockchain.block.headers', [index * CHUNK_SIZE+int(size/2), int(size/2)+1])
-                
-            res['hex']+=res2['hex']
-            res['count'] += res2['count']
-            res['max'] = res2['max']
-
-
+            self._requested_chunks.add((height, height + size))
+            res = await self.session.send_request('blockchain.block.headers', [height, size])
         finally:
-            self._requested_chunks.discard(index)
+            self._requested_chunks.discard((height, height + size))
         assert_dict_contains_field(res, field_name='count')
         assert_dict_contains_field(res, field_name='hex')
         assert_dict_contains_field(res, field_name='max')
         assert_non_negative_integer(res['count'])
         assert_non_negative_integer(res['max'])
         assert_hex_str(res['hex'])
-        if len(res['hex']) != HEADER_SIZE * 2 * res['count']:
-            raise RequestCorrupted('inconsistent chunk hex and count')
-        # we never request more than CHUNK_SIZE headers, but we enforce those fit in a single response
-        if res['max'] < CHUNK_SIZE:
-            raise RequestCorrupted(f"server uses too low 'max' count for block.headers: {res['max']} < {CHUNK_SIZE}")
+        # we never request more than 2016 headers, but we enforce those fit in a single response
+        if res['max'] < 2016:
+            raise RequestCorrupted(f"server uses too low 'max' count for block.headers: {res['max']} < 2016")
         if res['count'] != size:
             raise RequestCorrupted(f"expected {size} headers but only got {res['count']}")
-        conn = self.blockchain.connect_chunk(index, res['hex'])
+
+        conn = self.blockchain.connect_chunk(height, res['hex'])
+
         if not conn:
             return conn, 0
         return conn, res['count']

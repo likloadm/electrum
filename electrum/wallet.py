@@ -1,4 +1,4 @@
-# Electrum - lightweight Tidecoin client
+# Electrum - lightweight Arielcoin client
 # Copyright (C) 2015 Thomas Voegtlin
 #
 # Permission is hereby granted, free of charge, to any person
@@ -58,7 +58,7 @@ from .util import (NotEnoughFunds, UserCancelled, profiler,
                    InvalidPassword, format_time, timestamp_to_datetime, Satoshis,
                    Fiat, bfh, bh2u, TxMinedInfo, quantize_feerate, create_bip21_uri, OrderedDictWithIndex, parse_max_spend)
 from .simple_config import SimpleConfig, FEE_RATIO_HIGH_WARNING, FEERATE_WARNING_HIGH_FEE
-from .bitcoin import COIN, TYPE_ADDRESS, create_falcon_keypair
+from .bitcoin import COIN, TYPE_ADDRESS, create_dilithium_keypair
 from .bitcoin import is_address, address_to_script, is_minikey, relayfee, dust_threshold
 from .crypto import sha256d
 from . import keystore
@@ -2315,7 +2315,7 @@ class Abstract_Wallet(AddressSynchronizer, ABC):
             addr = req.get_address()
             if sanity_checks:
                 if not bitcoin.is_address(addr):
-                    raise Exception(_('Invalid Tidecoin address.'))
+                    raise Exception(_('Invalid Arielcoin address.'))
                 if not self.is_mine(addr):
                     raise Exception(_('Address not in wallet.'))
             key = addr
@@ -3162,7 +3162,7 @@ class Multisig_Wallet(Deterministic_Wallet):
         return bitcoin.redeem_script_to_address(self.txin_type, redeem_script)
 
     def pubkeys_to_scriptcode(self, pubkeys: Sequence[str]) -> str:
-        pubkeys = [(0x07.to_bytes(1, "little")+create_falcon_keypair(pubkey)[0]).hex() for pubkey in sorted(pubkeys)]
+        pubkeys = [(0x07.to_bytes(1, "little") + create_dilithium_keypair(pubkey)[0]).hex() for pubkey in sorted(pubkeys)]
         return transaction.multisig_script(pubkeys, self.m)
 
     def get_redeem_script(self, address):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Tidecoin client
+# Electrum - lightweight Arielcoin client
 # Copyright (C) 2012 thomasv@gitorious
 #
 # Permission is hereby granted, free of charge, to any person
@@ -205,7 +205,7 @@ class SettingsDialog(WindowModalDialog):
         # units
         units = base_units_list
         msg = (_('Base unit of your wallet.')
-               + '\n1 TDC = 1000 mTDC. 1 mTDC = 1000 tides. 1 bit = 100 tidoshi.\n'
+               + '\n1 ARL = 1000 pearls. 1 pearl = 1000 tulips. 1 tulip = 100 seashells.\n'
                + _('This setting affects the Send tab, and all balance related fields.'))
         unit_label = HelpLabel(_('Base unit') + ':', msg)
         unit_combo = QComboBox()
@@ -226,7 +226,7 @@ class SettingsDialog(WindowModalDialog):
         unit_combo.currentIndexChanged.connect(lambda x: on_unit(x, nz))
         gui_widgets.append((unit_label, unit_combo))
 
-        thousandsep_cb = QCheckBox(_("Add thousand separators to tidecoin amounts"))
+        thousandsep_cb = QCheckBox(_("Add thousand separators to arielcoin amounts"))
         thousandsep_cb.setChecked(bool(self.config.get('amt_add_thousands_sep', False)))
         def on_set_thousandsep(v):
             checked = v == Qt.Checked

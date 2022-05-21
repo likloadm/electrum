@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Tidecoin client
+# Electrum - lightweight Arielcoin client
 # Copyright (C) 2012 thomasv@gitorious
 #
 # Permission is hereby granted, free of charge, to any person
@@ -581,7 +581,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
         msg = ''.join([
             _("You are in testnet mode."), ' ',
             _("Testnet coins are worthless."), '\n',
-            _("Testnet is separate from the main Tidecoin network. It is used for testing.")
+            _("Testnet is separate from the main Arielcoin network. It is used for testing.")
         ])
         cb = QCheckBox(_("Don't show this again."))
         cb_checked = False
@@ -777,7 +777,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
         help_menu.addSeparator()
         help_menu.addAction(_("&Documentation"), lambda: webopen("http://docs.electrum.org/")).setShortcut(QKeySequence.HelpContents)
         # if not constants.net.TESTNET:
-        #     help_menu.addAction(_("&Tidecoin Paper"), self.show_bitcoin_paper)
+        #     help_menu.addAction(_("&Arielcoin Paper"), self.show_bitcoin_paper)
         help_menu.addAction(_("&Report Bug"), self.show_report_bug)
         help_menu.addSeparator()
         help_menu.addAction(_("&Donate to server"), self.donate_to_server)
@@ -788,22 +788,22 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
         d = self.network.get_donation_address()
         if d:
             host = self.network.get_parameters().server.host
-            self.pay_to_URI('tidecoin:%s?message=donation for %s'%(d, host))
+            self.pay_to_URI('arielcoin:%s?message=donation for %s'%(d, host))
         else:
-            self.pay_to_URI('tidecoin:TUgBCrnpaMymxNppC14TeZc6HvgPUr8GGX?message=donation for development')
+            self.pay_to_URI('arielcoin:TUgBCrnpaMymxNppC14TeZc6HvgPUr8GGX?message=donation for development')
 
     def show_about(self):
         QMessageBox.about(self, "Electrum",
                           (_("Version")+" %s" % ELECTRUM_VERSION + "\n\n" +
-                           _("Electrum's focus is speed, with low resource usage and simplifying Tidecoin.") + " " +
+                           _("Electrum's focus is speed, with low resource usage and simplifying Arielcoin.") + " " +
                            _("You do not need to perform regular backups, because your wallet can be "
                               "recovered from a secret phrase that you can memorize or write on paper.") + " " +
                            _("Startup times are instant because it operates in conjunction with high-performance "
-                              "servers that handle the most complicated parts of the Tidecoin system.") + "\n\n" +
+                              "servers that handle the most complicated parts of the Arielcoin system.") + "\n\n" +
                            _("Uses icons from the Icons8 icon pack (icons8.com).")))
 
     def show_bitcoin_paper(self):
-        filename = os.path.join(self.config.path, 'tidecoin.pdf')
+        filename = os.path.join(self.config.path, 'arielcoin.pdf')
         if not os.path.exists(filename):
             s = self._fetch_tx_from_network("54e48e5f5c656b26c3bca14a8c95aa583d07ebe84dde3b7dd4a78f4e4186e713")
             if not s:
@@ -1363,9 +1363,9 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
         self.payto_e = PayToEdit(self)
         self.payto_e.addPasteButton(self.app)
         msg = (_("Recipient of the funds.") + "\n\n"
-               + _("You may enter a Tidecoin address, a label from your list of contacts "
+               + _("You may enter a Arielcoin address, a label from your list of contacts "
                    "(a list of completions will be proposed), "
-                   "or an alias (email-like address that forwards to a Tidecoin address)") + ". "
+                   "or an alias (email-like address that forwards to a Arielcoin address)") + ". "
                + _("Lightning invoices are also supported.") + "\n\n"
                + _("You can also pay to many outputs in a single transaction, "
                    "specifying one output per line.") + "\n" + _("Format: address, amount") + "\n"
@@ -1522,7 +1522,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
 
         for o in outputs:
             if o.scriptpubkey is None:
-                self.show_error(_('Tidecoin Address is None'))
+                self.show_error(_('Arielcoin Address is None'))
                 return True
             if o.value is None:
                 self.show_error(_('Invalid Amount'))
@@ -2668,7 +2668,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
         address  = address.text().strip()
         message = message.toPlainText().strip()
         if not bitcoin.is_address(address):
-            self.show_message(_('Invalid Tidecoin address.'))
+            self.show_message(_('Invalid Arielcoin address.'))
             return
         if self.wallet.is_watching_only():
             self.show_message(_('This is a watching-only wallet.'))
@@ -2696,7 +2696,7 @@ class ElectrumWindow(QMainWindow, MessageBoxMixin, Logger):
         address  = address.text().strip()
         message = message.toPlainText().strip().encode('utf-8')
         if not bitcoin.is_address(address):
-            self.show_message(_('Invalid Tidecoin address.'))
+            self.show_message(_('Invalid Arielcoin address.'))
             return
         try:
             # This can throw on invalid base64

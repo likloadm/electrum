@@ -9,8 +9,8 @@ from .util import bfh, bh2u, BitcoinException
 from . import constants
 from . import ecc
 from .crypto import hash_160, hmac_oneshot
-from .bitcoin import rev_hex, int_to_hex, EncodeBase58Check, DecodeBase58Check, create_falcon_keypair, tdc_falcon, \
-    priv_to_pub, PBKDF2_FALCON_ROUNDS
+from .bitcoin import rev_hex, int_to_hex, EncodeBase58Check, DecodeBase58Check, create_dilithium_keypair, arl_dilithium, \
+    priv_to_pub, PBKDF2_DILITHIUM_ROUNDS
 from .logging import get_logger
 
 
@@ -61,9 +61,9 @@ def _CKD_priv(parent_privkey: bytes, parent_chaincode: bytes,
         data = bytes([0]) + parent_privkey + child_index
     else:
         data = parent_pubkey + child_index
-    I = hashlib.pbkdf2_hmac('sha512', data, parent_chaincode, iterations=PBKDF2_FALCON_ROUNDS, dklen=96)
-    public_key, child_privkey = tdc_falcon.generate_keypair(I[:48])
-    child_chaincode = I[48:]
+    I = hashlib.pbkdf2_hmac('sha512', data, parent_chaincode, iterations=PBKDF2_DILITHIUM_ROUNDS, dklen=64)
+    public_key, child_privkey = arl_dilithium.generate_keypair(I[:32])
+    child_chaincode = I[32:]
     return child_privkey, child_chaincode
 
 
@@ -84,9 +84,9 @@ def CKD_pub(parent_pubkey: bytes, parent_chaincode: bytes, child_index: int) -> 
 # helper function, callable with arbitrary 'child_index' byte-string.
 # i.e.: 'child_index' does not need to fit into 32 bits here! (c.f. trustedcoin billing)
 def _CKD_pub(parent_pubkey: bytes, parent_chaincode: bytes, child_index: bytes) -> Tuple[bytes, bytes]:
-    I = hashlib.pbkdf2_hmac('sha512', parent_pubkey + child_index, parent_chaincode, iterations=PBKDF2_FALCON_ROUNDS, dklen=96)
-    public_key, child_privkey = tdc_falcon.generate_keypair(I[:48])
-    child_chaincode = I[48:]
+    I = hashlib.pbkdf2_hmac('sha512', parent_pubkey + child_index, parent_chaincode, iterations=PBKDF2_DILITHIUM_ROUNDS, dklen=64)
+    public_key, child_privkey = arl_dilithium.generate_keypair(I[:32])
+    child_chaincode = I[32:]
     return public_key, child_chaincode
 
 
@@ -121,7 +121,7 @@ class BIP32Node(NamedTuple):
         depth = xkey[4]
         fingerprint = xkey[5:9]
         child_number = xkey[9:13]
-        chaincode = xkey[13:13 + 48]
+        chaincode = xkey[13:13 + 32]
         header = int.from_bytes(xkey[0:4], byteorder='big')
         if header in net.XPRV_HEADERS_INV:
             headers_inv = net.XPRV_HEADERS_INV
@@ -133,9 +133,9 @@ class BIP32Node(NamedTuple):
             raise InvalidMasterKeyVersionBytes(f'Invalid extended key format: {hex(header)}')
         xtype = headers_inv[header]
         if is_private:
-            eckey = xkey[13 + 49:]
+            eckey = xkey[13 + 33:]
         else:
-            eckey = xkey[13 + 48:]
+            eckey = xkey[13 + 32:]
         return BIP32Node(xtype=xtype,
                          eckey=eckey,
                          chaincode=chaincode,
@@ -146,10 +146,10 @@ class BIP32Node(NamedTuple):
     @classmethod
     def from_rootseed(cls, seed: bytes, *, xtype: str) -> 'BIP32Node':
         salt = bytes.fromhex('aaef2d3f4d77ac66e9c5a6c3d8f921d1')
-        key = hashlib.pbkdf2_hmac('sha512', seed, salt, iterations=PBKDF2_FALCON_ROUNDS, dklen=96)
-        master_k = key[0:48]
-        master_c = key[48:]
-        public_key, secret_key = tdc_falcon.generate_keypair(master_k)
+        key = hashlib.pbkdf2_hmac('sha512', seed, salt, iterations=PBKDF2_DILITHIUM_ROUNDS, dklen=64)
+        master_k = key[0:32]
+        master_c = key[32:]
+        public_key, secret_key = arl_dilithium.generate_keypair(master_k)
         return BIP32Node(xtype=xtype,
                          eckey=secret_key,
                          chaincode=master_c)
@@ -185,7 +185,7 @@ class BIP32Node(NamedTuple):
                    self.fingerprint +
                    self.child_number +
                    self.chaincode +
-                   (priv_to_pub(self.eckey) if len(self.eckey) == 1281 else self.eckey))
+                   (priv_to_pub(self.eckey) if len(self.eckey) == 4000 else self.eckey))
         return payload
 
     def to_xkey(self, *, net=None) -> str:
@@ -262,7 +262,7 @@ class BIP32Node(NamedTuple):
         """
         # TODO cache this
 
-        return hash_160(priv_to_pub(self.eckey) if len(self.eckey) == 1281 else self.eckey)[0:4]
+        return hash_160(priv_to_pub(self.eckey) if len(self.eckey) == 4000 else self.eckey)[0:4]
 
 
 def xpub_type(x):

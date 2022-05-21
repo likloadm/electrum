@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Electrum - lightweight Tidecoin client
+# Electrum - lightweight Arielcoin client
 # Copyright (C) 2018 The Electrum developers
 #
 # Permission is hereby granted, free of charge, to any person
@@ -47,6 +47,10 @@ BIP39_WALLET_FORMATS = read_json('bip39_wallet_formats.json', [])
 
 class AbstractNet:
 
+    DGW_CHECKPOINTS = None
+    DGW_CHECKPOINTS_SPACING = 10_000
+    DGW_CHECKPOINTS_START = 20_000
+
     NET_NAME: str
     TESTNET: bool
     WIF_PREFIX: int
@@ -67,9 +71,15 @@ class AbstractNet:
     def rev_genesis_bytes(cls) -> bytes:
         return bytes.fromhex(bitcoin.rev_hex(cls.GENESIS))
 
-# class Tidecoin(Coin):
-#     NAME = "Tidecoin"
-#     SHORTNAME = "TDC"
+    @classmethod
+    def max_dgw_checkpoint(cls) -> int:
+        # DGW Checkpoints start at height 500,000 and are every 100,000 blocks after
+        # (Arbitrary numbers)
+        return max(0, cls.DGW_CHECKPOINTS_START + (len(cls.DGW_CHECKPOINTS) - 1) * cls.DGW_CHECKPOINTS_SPACING)
+
+# class Arielcoin(Coin):
+#     NAME = "Arielcoin"
+#     SHORTNAME = "ARL"
 #     NET = "mainnet"
 #     XPUB_VERBYTES = bytes.fromhex("0768acde")
 #     XPRV_VERBYTES = bytes.fromhex("0768feb1")
@@ -84,23 +94,23 @@ class AbstractNet:
 #     TX_COUNT_HEIGHT = 11052
 #     TX_PER_BLOCK = 3
 
-class BitcoinMainnet(AbstractNet):
 
+class BitcoinMainnet(AbstractNet):
     NET_NAME = "mainnet"
     TESTNET = False
     WIF_PREFIX = 0x7D
-    ADDRTYPE_P2PKH = 33
-    ADDRTYPE_P2SH = 65
-    SEGWIT_HRP = "tbc"
+    ADDRTYPE_P2PKH = 58
+    ADDRTYPE_P2SH = 23
+    SEGWIT_HRP = "arl"
     BOLT11_HRP = SEGWIT_HRP
-    GENESIS = "480ecc7602d8989f32483377ed66381c391dda6215aeef9e80486a7fd3018075"
-    DEFAULT_PORTS = {'t': '50001', 's': '50002'}
+    GENESIS = "000000a9ea82f2b776be3115ecd5d72333fcb0f9d9cb3dacbc881c6090f9378f"
+    DEFAULT_PORTS = {'t': '50011', 's': '50012'}
     DEFAULT_SERVERS = read_json('servers.json', {})
     CHECKPOINTS = read_json('checkpoints.json', [])
-    donation_address = 'TUgBCrnpaMymxNppC14TeZc6HvgPUr8GGX'
+    donation_address = 'AKFjHqXn8YMWq9zSdAzDZ2iWGvSm3RKEDZ'
 
     XPRV_HEADERS = {
-        'standard':    0x0768feb1,  # xprv
+        'standard':    0x0788ADE4,  # xprv
         'p2wpkh-p2sh': 0x049d7878,  # yprv
         'p2wsh-p2sh':  0x0295b005,  # Yprv
         'p2wpkh':      0x04b2430c,  # zprv
@@ -108,7 +118,7 @@ class BitcoinMainnet(AbstractNet):
     }
     XPRV_HEADERS_INV = inv_dict(XPRV_HEADERS)
     XPUB_HEADERS = {
-        'standard':    0x0768acde,  # xpub
+        'standard':    0x0788B21E,  # xpub
         'p2wpkh-p2sh': 0x049d7cb2,  # ypub
         'p2wsh-p2sh':  0x0295b43f,  # Ypub
         'p2wpkh':      0x04b24746,  # zpub
@@ -191,7 +201,7 @@ class BitcoinSignet(BitcoinTestnet):
     CHECKPOINTS = []
     LN_DNS_SEEDS = []
 
-CHUNK_SIZE = 7200
+CHUNK_SIZE = 3600
 NETS_LIST = tuple(all_subclasses(AbstractNet))
 
 # don't import net directly, import the module instead (so that net is singleton)
