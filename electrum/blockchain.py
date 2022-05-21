@@ -27,13 +27,15 @@ import traceback
 from typing import Optional, Dict, Mapping, Sequence
 from .constants import CHUNK_SIZE
 from . import util
-from .bitcoin import hash_encode, int_to_hex, rev_hex
+from .bitcoin import hash_encode, int_to_hex, rev_hex, hash_decode
 from .crypto import sha256d
 from . import constants
 from .util import bfh, bh2u, with_lock
 from .simple_config import SimpleConfig
 from .logging import get_logger, Logger
-import tdc_yespower as tdc_yespower
+import tdc_yespower
+import kawpow
+import arl_dilithium
 
 _logger = get_logger(__name__)
 
@@ -82,6 +84,10 @@ def hash_header(header: dict) -> str:
 
 def pow_raw_header(header: dict) -> str:
     return hash_encode(tdc_yespower.getPoWHash(bfh(serialize_header(header))))
+
+
+def pow_raw_header_str(header: dict) -> str:
+    return hash_encode(tdc_yespower.getPoWHash(bfh(header)))
 
 
 def hash_raw_header(header: str) -> str:
