@@ -1,13 +1,14 @@
-from pythonforandroid.recipe import CompiledComponentsPythonRecipe
+from pythonforandroid.recipe.kawpow import KawpowPythonRecipe
 
-class Kawpow(CompiledComponentsPythonRecipe):
+assert KawpowPythonRecipe._version == "1.0"
+assert KawpowPythonRecipe.depends == ['setuptools', 'python3', 'cffi', 'pycparser']
+assert KawpowPythonRecipe.python_depends == []
+
+
+class Kawpow(KawpowPythonRecipe):
     version = 'master'
     url = 'https://github.com/RavenCommunity/cpp-kawpow/archive/{version}.zip'
     site_packages_name = 'kawpow'
-    depends = ['setuptools']
-    call_hostpython_via_targetpython = False
 
-    def should_build(self, arch):
-        return True
 
 recipe = Kawpow()
