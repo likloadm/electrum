@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Arielcoin client
+# Electrum - lightweight Bitcoin client
 # Copyright (C) 2015 Thomas Voegtlin
 #
 # Permission is hereby granted, free of charge, to any person
@@ -30,7 +30,7 @@ from PyQt5.QtCore import Qt, QPersistentModelIndex, QModelIndex
 from PyQt5.QtWidgets import (QAbstractItemView, QMenu)
 
 from electrum.i18n import _
-from electrum.bitcoin import is_address
+from electrum.ravencoin import is_address
 from electrum.util import block_explorer_URL
 from electrum.plugin import run_hook
 

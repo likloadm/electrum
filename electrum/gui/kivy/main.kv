@@ -11,7 +11,7 @@
 
 <Label>
     markup: True
-    font_name: 'DroidSans'
+    font_name: 'Roboto'
     font_size: '16sp'
     bound: False
     on_text: if isinstance(self.text, _) and not self.bound: self.bound=True; _.bind(self)
@@ -430,6 +430,7 @@
         Clock.schedule_once(lambda dt: app.popup_dialog(self.name), 0.05)
         self.state = 'normal'
 
+
 <NetworkDialog@BoxLayout>
     orientation: 'vertical'
     ScrollView:
@@ -534,6 +535,9 @@ BoxLayout:
                 ActionOvrButton:
                     name: 'addresses_dialog'
                     text: _('Addresses')
+                ActionOvrButton:
+                    name: 'lightning_channels_dialog'
+                    text: _('Channels')
                 ActionOvrButton:
                     name: 'settings'
                     text: _('Settings')

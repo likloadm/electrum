@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Arielcoin client
+# Electrum - lightweight Bitcoin client
 # Copyright (C) 2012 thomasv@gitorious
 #
 # Permission is hereby granted, free of charge, to any person
@@ -30,7 +30,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QComboBox,  QTabWidget,
                              QSpinBox,  QFileDialog, QCheckBox, QLabel,
                              QVBoxLayout, QGridLayout, QLineEdit,
-                             QPushButton, QWidget, QHBoxLayout)
+                             QPushButton, QWidget, QHBoxLayout, QTextEdit)
 
 from electrum.i18n import _, languages
 from electrum import util, coinchooser, paymentrequest
@@ -54,6 +54,8 @@ class SettingsDialog(WindowModalDialog):
         self.config = config
         self.window = parent
         self.need_restart = False
+        self.save_blacklist = False
+        self.save_whitelist = False
         self.fx = self.window.fx
         self.wallet = self.window.wallet
         
@@ -62,6 +64,7 @@ class SettingsDialog(WindowModalDialog):
         gui_widgets = []
         tx_widgets = []
         oa_widgets = []
+        asset_widgets = []
 
         # language
         lang_help = _('Select which language is used in the GUI (after restart).')
@@ -79,7 +82,6 @@ class SettingsDialog(WindowModalDialog):
             for w in [lang_combo, lang_label]: w.setEnabled(False)
         def on_lang(x):
             lang_request = list(languages.keys())[lang_combo.currentIndex()]
-            print(lang_request)
             if lang_request != self.config.get('language'):
                 self.config.set_key("language", lang_request, True)
                 self.need_restart = True
@@ -103,29 +105,29 @@ class SettingsDialog(WindowModalDialog):
         nz.valueChanged.connect(on_nz)
         gui_widgets.append((nz_label, nz))
 
-        use_rbf = bool(self.config.get('use_rbf', True))
-        use_rbf_cb = QCheckBox(_('Use Replace-By-Fee'))
-        use_rbf_cb.setChecked(use_rbf)
-        use_rbf_cb.setToolTip(
-            _('If you check this box, your transactions will be marked as non-final,') + '\n' + \
-            _('and you will have the possibility, while they are unconfirmed, to replace them with transactions that pay higher fees.') + '\n' + \
-            _('Note that some merchants do not accept non-final transactions until they are confirmed.'))
-        def on_use_rbf(x):
-            self.config.set_key('use_rbf', bool(x))
-            batch_rbf_cb.setEnabled(bool(x))
-        use_rbf_cb.stateChanged.connect(on_use_rbf)
-        tx_widgets.append((use_rbf_cb, None))
+        # use_rbf = bool(self.config.get('use_rbf', True))
+        # use_rbf_cb = QCheckBox(_('Use Replace-By-Fee'))
+        # use_rbf_cb.setChecked(use_rbf)
+        # use_rbf_cb.setToolTip(
+        #     _('If you check this box, your transactions will be marked as non-final,') + '\n' + \
+        #     _('and you will have the possibility, while they are unconfirmed, to replace them with transactions that pay higher fees.') + '\n' + \
+        #     _('Note that some merchants do not accept non-final transactions until they are confirmed.'))
+        # def on_use_rbf(x):
+        #     self.config.set_key('use_rbf', bool(x))
+        #     batch_rbf_cb.setEnabled(bool(x))
+        # use_rbf_cb.stateChanged.connect(on_use_rbf)
+        # tx_widgets.append((use_rbf_cb, None))
 
-        batch_rbf_cb = QCheckBox(_('Batch RBF transactions'))
-        batch_rbf_cb.setChecked(bool(self.config.get('batch_rbf', False)))
-        batch_rbf_cb.setEnabled(use_rbf)
-        batch_rbf_cb.setToolTip(
-            _('If you check this box, your unconfirmed transactions will be consolidated into a single transaction.') + '\n' + \
-            _('This will save fees.'))
-        def on_batch_rbf(x):
-            self.config.set_key('batch_rbf', bool(x))
-        batch_rbf_cb.stateChanged.connect(on_batch_rbf)
-        tx_widgets.append((batch_rbf_cb, None))
+        # batch_rbf_cb = QCheckBox(_('Batch RBF transactions'))
+        # batch_rbf_cb.setChecked(bool(self.config.get('batch_rbf', False)))
+        # batch_rbf_cb.setEnabled(use_rbf)
+        # batch_rbf_cb.setToolTip(
+        #     _('If you check this box, your unconfirmed transactions will be consolidated into a single transaction.') + '\n' + \
+        #     _('This will save fees.'))
+        # def on_batch_rbf(x):
+        #     self.config.set_key('batch_rbf', bool(x))
+        # batch_rbf_cb.stateChanged.connect(on_batch_rbf)
+        # tx_widgets.append((batch_rbf_cb, None))
 
         # lightning
         lightning_widgets = []
@@ -205,7 +207,7 @@ class SettingsDialog(WindowModalDialog):
         # units
         units = base_units_list
         msg = (_('Base unit of your wallet.')
-               + '\n1 ARL = 1000 pearls. 1 pearl = 1000 tulips. 1 tulip = 100 seashells.\n'
+               + '\n1 RVN = 1000 mRVN. 1 mRVN = 1000 bits. 1 bit = 100 sat.\n'
                + _('This setting affects the Send tab, and all balance related fields.'))
         unit_label = HelpLabel(_('Base unit') + ':', msg)
         unit_combo = QComboBox()
@@ -226,7 +228,7 @@ class SettingsDialog(WindowModalDialog):
         unit_combo.currentIndexChanged.connect(lambda x: on_unit(x, nz))
         gui_widgets.append((unit_label, unit_combo))
 
-        thousandsep_cb = QCheckBox(_("Add thousand separators to arielcoin amounts"))
+        thousandsep_cb = QCheckBox(_("Add thousand separators to bitcoin amounts"))
         thousandsep_cb.setChecked(bool(self.config.get('amt_add_thousands_sep', False)))
         def on_set_thousandsep(v):
             checked = v == Qt.Checked
@@ -255,7 +257,7 @@ class SettingsDialog(WindowModalDialog):
         colortheme_combo = QComboBox()
         colortheme_combo.addItem(_('Light'), 'default')
         colortheme_combo.addItem(_('Dark'), 'dark')
-        index = colortheme_combo.findData(self.config.get('qt_gui_color_theme', 'default'))
+        index = colortheme_combo.findData(self.config.get('qt_gui_color_theme', 'dark'))
         colortheme_combo.setCurrentIndex(index)
         colortheme_label = QLabel(_('Color theme') + ':')
         def on_colortheme(x):
@@ -272,7 +274,7 @@ class SettingsDialog(WindowModalDialog):
         gui_widgets.append((updatecheck_cb, None))
 
         filelogging_cb = QCheckBox(_("Write logs to file"))
-        filelogging_cb.setChecked(bool(self.config.get('log_to_file', False)))
+        filelogging_cb.setChecked(bool(self.config.get('log_to_file', True)))
         def on_set_filelogging(v):
             self.config.set_key('log_to_file', v == Qt.Checked, save=True)
             self.need_restart = True
@@ -349,7 +351,7 @@ class SettingsDialog(WindowModalDialog):
 
         def on_outrounding(x):
             self.config.set_key('coin_chooser_output_rounding', bool(x))
-        enable_outrounding = bool(self.config.get('coin_chooser_output_rounding', True))
+        enable_outrounding = bool(self.config.get('coin_chooser_output_rounding', False))
         outrounding_cb = QCheckBox(_('Enable output value rounding'))
         outrounding_cb.setToolTip(
             _('Set the value of the change output so that it has similar precision to the other outputs.') + '\n' +
@@ -358,6 +360,20 @@ class SettingsDialog(WindowModalDialog):
         outrounding_cb.setChecked(enable_outrounding)
         outrounding_cb.stateChanged.connect(on_outrounding)
         tx_widgets.append((outrounding_cb, None))
+
+        def on_msgs(x):
+            self.config.set_key('enable_op_return_messages', bool(x))
+        enable_tx_custom_message = bool(self.config.get('enable_op_return_messages', False))
+        tx_custom_message = QCheckBox(_('Enable OP_RETURN messages'))
+        tx_custom_message.setToolTip(
+            _('Add the ability to add an invalid pubkey to a transaction') + '\n' +
+            _('that has been encoded with a short message.') + '\n' +
+            _('This is not typical Ravencoin behavior and these messages') + '\n' +
+            _('may be pruned from the chain in the future.') + '\n' +
+            _('This will increase your transaction size and therefore your fee.'))
+        tx_custom_message.setChecked(enable_tx_custom_message)
+        tx_custom_message.stateChanged.connect(on_msgs)
+        tx_widgets.append((tx_custom_message, None))
 
         block_explorers = sorted(util.block_explorer_info().keys())
         BLOCK_EX_CUSTOM_ITEM = _("Custom URL")
@@ -399,6 +415,53 @@ class SettingsDialog(WindowModalDialog):
         block_ex_hbox_w = QWidget()
         block_ex_hbox_w.setLayout(block_ex_hbox)
         tx_widgets.append((block_ex_label, block_ex_hbox_w))
+
+        ipfs_explorers = sorted(util.ipfs_explorer_info().keys())
+        IPFS_EX_CUSTOM_ITEM = _("Custom URL")
+        if IPFS_EX_CUSTOM_ITEM in ipfs_explorers:  # malicious translation?
+            ipfs_explorers.remove(IPFS_EX_CUSTOM_ITEM)
+        ipfs_explorers.append(IPFS_EX_CUSTOM_ITEM)
+        msg = _('Choose which online IPFS explorer to use for functions that open a web browser')
+        ipfs_ex_label = HelpLabel(_('Online IPFS Explorer') + ':', msg)
+        ipfs_ex_combo = QComboBox()
+        ipfs_ex_custom_e = QLineEdit(self.config.get('ipfs_explorer_custom') or '')
+        ipfs_ex_combo.addItems(ipfs_explorers)
+        ipfs_ex_combo.setCurrentIndex(
+            ipfs_ex_combo.findText(util.ipfs_explorer(self.config) or IPFS_EX_CUSTOM_ITEM))
+
+        def showhide_ipfs_ex_custom_e():
+            ipfs_ex_custom_e.setVisible(ipfs_ex_combo.currentText() == IPFS_EX_CUSTOM_ITEM)
+
+        showhide_ipfs_ex_custom_e()
+
+        def on_ie_combo(x):
+            if ipfs_ex_combo.currentText() == IPFS_EX_CUSTOM_ITEM:
+                on_ie_edit()
+            else:
+                ie_result = ipfs_explorers[ipfs_ex_combo.currentIndex()]
+                self.config.set_key('ipfs_explorer_custom', None, False)
+                self.config.set_key('ipfs_explorer', ie_result, True)
+            showhide_ipfs_ex_custom_e()
+
+        ipfs_ex_combo.currentIndexChanged.connect(on_ie_combo)
+
+        def on_ie_edit():
+            val = ipfs_ex_custom_e.text()
+            try:
+                val = ast.literal_eval(val)  # to also accept tuples
+            except:
+                pass
+            self.config.set_key('ipfs_explorer_custom', val)
+
+        ipfs_ex_custom_e.editingFinished.connect(on_ie_edit)
+        ipfs_ex_hbox = QHBoxLayout()
+        ipfs_ex_hbox.setContentsMargins(0, 0, 0, 0)
+        ipfs_ex_hbox.setSpacing(0)
+        ipfs_ex_hbox.addWidget(ipfs_ex_combo)
+        ipfs_ex_hbox.addWidget(ipfs_ex_custom_e)
+        ipfs_ex_hbox_w = QWidget()
+        ipfs_ex_hbox_w.setLayout(ipfs_ex_hbox)
+        tx_widgets.append((ipfs_ex_label, ipfs_ex_hbox_w))
 
         # Fiat Currency
         hist_checkbox = QCheckBox()
@@ -499,10 +562,89 @@ class SettingsDialog(WindowModalDialog):
         fiat_widgets.append((QLabel(_('Show capital gains in history')), hist_capgains_checkbox))
         fiat_widgets.append((QLabel(_('Show Fiat balance for addresses')), fiat_address_checkbox))
 
+        # Asset black list
+        msg = 'A list of regular expressions separated by new lines. ' \
+              'If an asset\'s name matches any regular expression in this list, ' \
+              'it will be hidden from view.'
+        regex_b = '\n'.join(self.window.asset_blacklist)
+        blacklist_info = HelpLabel(_('Asset Blacklist') + ':', msg)
+        regex_e_b = QTextEdit()
+        regex_e_b.setLineWrapMode(QTextEdit.NoWrap)
+        regex_e_b.setPlainText(regex_b)
+
+        def update_blacklist():
+            self.window.asset_blacklist = regex_e_b.toPlainText().split('\n')
+            if not self.window.asset_blacklist[0]: # We don't want an empty string, we want an empty regex
+                self.window.asset_blacklist = []
+            self.save_blacklist = True
+
+        regex_e_b.textChanged.connect(update_blacklist)
+        asset_widgets.append((blacklist_info, regex_e_b))
+
+        # Asset white list
+        msg = 'A list of regular expressions seperated by new lines. ' \
+              'Assets that match any of these regular expressions and would normally ' \
+              'be blocked by the blacklist are shown.'
+        regex_w = '\n'.join(self.window.asset_whitelist)
+        whitelist_info = HelpLabel(_('Asset Whitelist') + ':', msg)
+        regex_e_w = QTextEdit()
+        regex_e_w.setLineWrapMode(QTextEdit.NoWrap)
+        regex_e_w.setPlainText(regex_w)
+
+        def update_whitelist():
+            self.window.asset_whitelist = regex_e_w.toPlainText().split('\n')
+            if not self.window.asset_whitelist[0]:
+                self.window.asset_whitelist = []
+            self.save_whitelist = True
+
+        regex_e_w.textChanged.connect(update_whitelist)
+        asset_widgets.append((whitelist_info, regex_e_w))
+
+        show_spam_cb = QCheckBox(_("Show assets hidden from view"))
+        show_spam_cb.setChecked(self.config.get('show_spam_assets', False))
+
+        def on_set_show_spam(v):
+            self.window.config.set_key('show_spam_assets', v == Qt.Checked, save=True)
+            self.window.asset_list.update()
+            self.window.history_model.refresh('Toggled show spam assets', True)
+
+        show_spam_cb.stateChanged.connect(on_set_show_spam)
+        asset_widgets.append((show_spam_cb, None))
+
+        advanced_assets_cb = QCheckBox(_("Enable advanced asset options"))
+        advanced_assets_cb.setChecked(self.config.get('advanced_asset_functions', False))
+
+        def on_set_advanced_assets_cb(v):
+            self.window.config.set_key('advanced_asset_functions', v == Qt.Checked, save=True)
+
+            self.window.create_workspace.associated_data_interpret_override.setVisible(v == Qt.Checked)
+            self.window.create_workspace.asset_addr_w.setVisible(v == Qt.Checked)
+            self.window.reissue_workspace.associated_data_interpret_override.setVisible(v == Qt.Checked)
+            self.window.reissue_workspace.asset_addr_w.setVisible(v == Qt.Checked)
+            self.window.asset_list.update()
+
+        advanced_assets_cb.stateChanged.connect(on_set_advanced_assets_cb)
+        asset_widgets.append((advanced_assets_cb, None))
+
+        message_widgets = []
+
+        dev_notifications_cb = QCheckBox(_("Enable developer notifications"))
+        dev_notifications_cb.setChecked(self.config.get('get_dev_notifications', True))
+
+        def on_set_dev_notifications_cb(v):
+            self.window.config.set_key('get_dev_notifications', v == Qt.Checked, save=True)
+            self.window.message_list.update()
+
+        dev_notifications_cb.stateChanged.connect(on_set_dev_notifications_cb)
+        message_widgets.append((dev_notifications_cb, None))
+
         tabs_info = [
             (gui_widgets, _('General')),
+            (asset_widgets, _('Assets')),
             (tx_widgets, _('Transactions')),
+            # (lightning_widgets, _('Lightning')),
             (fiat_widgets, _('Fiat')),
+            (message_widgets, _('Messages')),
             (oa_widgets, _('OpenAlias')),
         ]
         for widgets, name in tabs_info:

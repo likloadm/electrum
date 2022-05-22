@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import os.path
 import time
 import sys
@@ -17,7 +18,7 @@ from PyQt5.QtGui import (QFont, QColor, QCursor, QPixmap, QStandardItem, QImage,
 from PyQt5.QtCore import (Qt, QPersistentModelIndex, QModelIndex, pyqtSignal,
                           QCoreApplication, QItemSelectionModel, QThread,
                           QSortFilterProxyModel, QSize, QLocale, QAbstractItemModel,
-                          QEvent, QRect, QPoint, QObject)
+                          QEvent, QRect, QPoint, QObject, QTimer)
 from PyQt5.QtWidgets import (QPushButton, QLabel, QMessageBox, QHBoxLayout,
                              QAbstractItemView, QVBoxLayout, QLineEdit,
                              QStyle, QDialog, QGroupBox, QButtonGroup, QRadioButton,
@@ -65,6 +66,69 @@ TRANSACTION_FILE_EXTENSION_FILTER_ONLY_COMPLETE_TX = "Complete Transaction (*.tx
 TRANSACTION_FILE_EXTENSION_FILTER_SEPARATE = (f"{TRANSACTION_FILE_EXTENSION_FILTER_ONLY_PARTIAL_TX};;"
                                               f"{TRANSACTION_FILE_EXTENSION_FILTER_ONLY_COMPLETE_TX};;"
                                               f"All files (*)")
+
+
+class HeaderTracker(QLabel):
+    def __init__(self):
+        super().__init__()
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_timer)
+        self.start = time.time()
+        self.headers_start = -1
+        self.local_height = -1
+        self.server_height = -1
+        self.last_eta = '...'
+
+        self.loading_chars = u'\U0001f311\U0001f312\U0001f313\U0001f314\U0001f315\U0001f316\U0001f317\U0001f318'
+        self.loading_pointer = 0
+        self.current_char = self.loading_chars[self.loading_pointer]
+
+        self.begin()
+
+    def calculate_stats(self, local_height, server_height):
+
+        if self.headers_start < 0:
+            self.headers_start = local_height
+
+        sec_delta = time.time() - self.start
+        headers_left = server_height - local_height
+        header_delta = local_height - self.headers_start
+
+        eta = self.last_eta
+
+        if headers_left != 0 and sec_delta != 0 and header_delta != 0:
+            secs = sec_delta / header_delta * headers_left
+            eta = str(datetime.timedelta(seconds=round(secs)))
+
+        self.last_eta = eta
+
+        self.local_height = local_height
+        self.server_height = server_height
+
+        self.update()
+
+    def update(self):
+        if self.local_height == -1 or self.server_height == -1:
+            self.setText(_('Synchronizing Headers (Waiting for connection...)'))
+        else:
+            self.setText(_('Synchronizing Headers {} {}/{} | Estimated Time Until Completion: {} | '
+                       'Headers Are Used To Verify Information').format(
+                self.current_char, self.local_height, self.server_height, self.last_eta))
+
+    def update_timer(self):
+        self.current_char = c = self.loading_chars[self.loading_pointer]
+
+        self.loading_pointer += 1
+        self.loading_pointer %= len(self.loading_chars)
+
+        self.update()
+
+    def begin(self):
+        self.timer.start(100)
+
+    def finished(self):
+        self.timer.stop()
 
 
 class EnterButton(QPushButton):
@@ -128,6 +192,19 @@ class HelpLabel(QLabel):
         self.setFont(self.font)
         self.app.setOverrideCursor(QCursor(Qt.ArrowCursor))
         return QLabel.leaveEvent(self, event)
+
+
+class HelpButtonURL(QToolButton):
+    def __init__(self, url):
+        QToolButton.__init__(self)
+        self.setText('?')
+        self.setFocusPolicy(Qt.NoFocus)
+        self.setFixedWidth(round(2.2 * char_width_in_lineedit()))
+        self.clicked.connect(self.onclick)
+        self.url = url
+
+    def onclick(self):
+        webopen(self.url)
 
 
 class HelpButton(QToolButton):
@@ -387,8 +464,9 @@ def text_dialog(
     if dialog.exec_():
         return txt.toPlainText()
 
+
 class ChoicesLayout(object):
-    def __init__(self, msg, choices, on_clicked=None, checked_index=0):
+    def __init__(self, msg, choices, on_clicked=None, checked_index=0, horizontal=False):
         vbox = QVBoxLayout()
         if len(msg) > 50:
             vbox.addWidget(WWLabel(msg))
@@ -396,7 +474,7 @@ class ChoicesLayout(object):
         gb2 = QGroupBox(msg)
         vbox.addWidget(gb2)
 
-        vbox2 = QVBoxLayout()
+        vbox2 = QHBoxLayout() if horizontal else QVBoxLayout()
         gb2.setLayout(vbox2)
 
         self.group = group = QButtonGroup()
@@ -681,11 +759,14 @@ class MyTreeView(QTreeView):
         # overriding this might allow avoiding storing duplicate data
         return self.get_role_data_from_coordinate(row, col, role=self.ROLE_EDIT_KEY)
 
+    # TODO: Fix this; not always getting correct string values
     def get_filter_data_from_coordinate(self, row, col) -> str:
         filter_data = self.get_role_data_from_coordinate(row, col, role=self.ROLE_FILTER_DATA)
         if filter_data:
             return filter_data
         txt = self.get_text_from_coordinate(row, col)
+        if not txt:
+            txt = ''
         txt = txt.lower()
         return txt
 
@@ -929,6 +1010,51 @@ class TaskThread(QThread):
         self.wait()
 
 
+class ComplexLineEdit(QWidget):
+    #https://gist.github.com/stilManiac/1851fdbd77c8c5fa3053d8081d64ece4
+    def __init__(self, parent=None, custom_prefix=None, custom_suffix=None):
+        super().__init__(parent)
+
+        layout = QHBoxLayout()
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.prefix_widget = QLabel() if not custom_prefix else custom_prefix
+        #self.prefix_widget.setFixedHeight(26)
+        layout.addWidget(self.prefix_widget)
+
+        self.lineEdit = QLineEdit()
+        #self.lineEdit.setFixedHeight(26)
+        layout.addWidget(self.lineEdit)
+
+        self.suffix_widget = QLabel() if not custom_suffix else custom_suffix
+        #self.suffix_widget.setFixedHeight(26)
+        layout.addWidget(self.suffix_widget)
+
+        self.setLayout(layout)
+
+    def setText(self, text):
+        self.lineEdit.setText(text)
+
+    def text(self):
+        return self.lineEdit.text()
+
+    def set_prefix(self, text):
+        self.prefix_widget.setText(text)
+
+    def get_prefix(self):
+        return self.prefix_widget.text()
+
+    def set_suffix(self, text):
+        self.suffix_widget.setText(text)
+
+    def setPrefixStyle(self, style: str):
+        self.prefix_widget.setStyleSheet(style)
+
+    def setSuffixStyle(self, style: str):
+        self.suffix_widget.setStyleSheet(style)
+
+
 class ColorSchemeItem:
     def __init__(self, fg_color, bg_color):
         self.colors = (fg_color, bg_color)
@@ -1110,7 +1236,8 @@ class IconLabel(QWidget):
         self.icon.repaint()  # macOS hack for #6269
 
 def get_default_language():
-    return 'en_UK'
+    name = QLocale.system().name()
+    return name if name in languages else 'en_UK'
 
 
 def char_width_in_lineedit() -> int:

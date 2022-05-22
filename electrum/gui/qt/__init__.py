@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Arielcoin client
+# Electrum - lightweight Bitcoin client
 # Copyright (C) 2012 thomasv@gitorious
 #
 # Permission is hereby granted, free of charge, to any person
@@ -65,7 +65,25 @@ if TYPE_CHECKING:
     from electrum.daemon import Daemon
     from electrum.simple_config import SimpleConfig
     from electrum.plugin import Plugins
+    from electrum.simple_config import SimpleConfig
+    from electrum.daemon import Daemon
+    from electrum.plugin import Plugins
 
+
+class BaseElectrumGui:
+    def __init__(self, *, config: 'SimpleConfig', daemon: 'Daemon', plugins: 'Plugins'):
+        self.config = config
+        self.daemon = daemon
+        self.plugins = plugins
+
+    def main(self) -> None:
+        raise NotImplementedError()
+
+    def stop(self) -> None:
+        """Stops the GUI.
+        This method must be thread-safe.
+        """
+        pass
 
 class OpenFileEventFilter(QObject):
     def __init__(self, windows):
@@ -109,13 +127,13 @@ class ElectrumGui(BaseElectrumGui, Logger):
         if hasattr(QtCore.Qt, "AA_ShareOpenGLContexts"):
             QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
         if hasattr(QGuiApplication, 'setDesktopFileName'):
-            QGuiApplication.setDesktopFileName('electrum.desktop')
+            QGuiApplication.setDesktopFileName('electrum-ravencoin.desktop')
         self.gui_thread = threading.current_thread()
         self.windows = []  # type: List[ElectrumWindow]
         self.efilter = OpenFileEventFilter(self.windows)
         self.app = QElectrumApplication(sys.argv)
         self.app.installEventFilter(self.efilter)
-        self.app.setWindowIcon(read_QIcon("electrum.png"))
+        self.app.setWindowIcon(read_QIcon("electrum-ravencoin.png"))
         self._cleaned_up = False
         # timer
         self.timer = QTimer(self.app)
@@ -144,7 +162,7 @@ class ElectrumGui(BaseElectrumGui, Logger):
         self.tray.show()
 
     def set_dark_theme_if_needed(self):
-        use_dark_theme = self.config.get('qt_gui_color_theme', 'default') == 'dark'
+        use_dark_theme = self.config.get('qt_gui_color_theme', 'dark') == 'dark'
         if use_dark_theme:
             try:
                 import qdarkstyle
@@ -282,6 +300,7 @@ class ElectrumGui(BaseElectrumGui, Logger):
         self.windows.append(w)
         self.build_tray_menu()
         w.warn_if_testnet()
+        w.warn_if_hardware()
         w.warn_if_watching_only()
         return w
 

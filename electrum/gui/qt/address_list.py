@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Arielcoin client
+# Electrum - lightweight Bitcoin client
 # Copyright (C) 2015 Thomas Voegtlin
 #
 # Permission is hereby granted, free of charge, to any person
@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import QAbstractItemView, QComboBox, QLabel, QMenu
 from electrum.i18n import _
 from electrum.util import block_explorer_URL, profiler
 from electrum.plugin import run_hook
-from electrum.bitcoin import is_address
+from electrum.ravencoin import is_address
 from electrum.wallet import InternalAddressCorruption
 
 from .util import MyTreeView, MONOSPACE_FONT, ColorScheme, webopen, MySortModel
@@ -128,7 +128,7 @@ class AddressList(MyTreeView):
             self.Columns.TYPE: _('Type'),
             self.Columns.ADDRESS: _('Address'),
             self.Columns.LABEL: _('Label'),
-            self.Columns.COIN_BALANCE: _('Balance'),
+            self.Columns.COIN_BALANCE: _('Balance') + ' (RVN)',
             self.Columns.FIAT_BALANCE: ccy + ' ' + _('Balance'),
             self.Columns.NUM_TXS: _('Tx'),
         }
@@ -163,11 +163,12 @@ class AddressList(MyTreeView):
         fx = self.parent.fx
         set_address = None
         addresses_beyond_gap_limit = self.wallet.get_all_known_addresses_beyond_gap_limit()
+        # We only care about ravencoin for addresses for now
         for address in addr_list:
             num = self.wallet.get_address_history_len(address)
             label = self.wallet.get_label(address)
             c, u, x = self.wallet.get_addr_balance(address)
-            balance = c + u + x
+            balance = c.rvn_value.value + u.rvn_value.value + x.rvn_value.value
             is_used_and_empty = self.wallet.is_used(address) and balance == 0
             if self.show_used == AddressUsageStateFilter.UNUSED and (balance or is_used_and_empty):
                 continue
@@ -254,9 +255,9 @@ class AddressList(MyTreeView):
             #menu.addAction(_("Request payment"), lambda: self.parent.receive_at(addr))
             if self.wallet.can_export():
                 menu.addAction(_("Private key"), lambda: self.parent.show_private_key(addr))
-            # if not is_multisig and not self.wallet.is_watching_only():
-            #     menu.addAction(_("Sign/verify message"), lambda: self.parent.sign_verify_message(addr))
-            #     menu.addAction(_("Encrypt/decrypt message"), lambda: self.parent.encrypt_message(addr))
+            if not is_multisig and not self.wallet.is_watching_only():
+                menu.addAction(_("Sign/verify message"), lambda: self.parent.sign_verify_message(addr))
+                menu.addAction(_("Encrypt/decrypt message"), lambda: self.parent.encrypt_message(addr))
             if can_delete:
                 menu.addAction(_("Remove from wallet"), lambda: self.parent.remove_address(addr))
             addr_URL = block_explorer_URL(self.config, 'addr', addr)

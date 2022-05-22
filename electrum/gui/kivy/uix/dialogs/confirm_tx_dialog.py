@@ -93,7 +93,6 @@ Builder.load_string('''
                 id: final_cb
                 opacity: int(root.show_final)
                 disabled: not root.show_final
-                on_release: root.update_tx()
         Label:
             text: root.warning
             text_size: self.width, None
@@ -151,7 +150,8 @@ class ConfirmTxDialog(FeeSliderDialog, Factory.Popup):
             self.app.show_error(repr(e))
             return
         self.ids.ok_button.disabled = False
-        amount = self.amount if self.amount != '!' else tx.output_value()
+        amount = self.amount if (self.amount.rvn_value != '!'
+                                 and all(val != '!' for val in self.amount.assets.values())) else tx.output_value()
         tx_size = tx.estimated_size()
         fee = tx.get_fee()
         self.ids.fee_label.text = self.app.format_amount_and_units(fee)

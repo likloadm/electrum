@@ -361,7 +361,6 @@ Builder.load_string('''
         SeedButton:
             id: text_input_seed
             text: ''
-            height: '220dp'
             on_text: Clock.schedule_once(root.on_text)
         SeedLabel:
             text: root.message
@@ -488,7 +487,7 @@ Builder.load_string('''
 
 <ShowXpubDialog>
     xpub: ''
-    message: _('Here is your master public key. Do not share it, you can lose your funds.')
+    message: _('Here is your master public key. Share it with your cosigners.')
     BigLabel:
         text: "MASTER PUBLIC KEY"
     GridLayout
@@ -1023,11 +1022,11 @@ class ShowXpubDialog(WizardDialog):
         self.app._clipboard.copy(self.xpub)
 
     def do_share(self):
-        self.app.do_share(self.xpub, _("Master Key"))
+        self.app.do_share(self.xpub, _("Master Public Key"))
 
     def do_qr(self):
         from .qr_dialog import QRDialog
-        popup = QRDialog(_("Master Key"), self.xpub, True)
+        popup = QRDialog(_("Master Public Key"), self.xpub, True)
         popup.open()
 
 

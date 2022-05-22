@@ -13,10 +13,10 @@ from kivy.uix.recycleview import RecycleView
 from electrum.invoices import (PR_TYPE_ONCHAIN, PR_TYPE_LN, PR_DEFAULT_EXPIRATION_WHEN_CREATING,
                                PR_PAID, PR_UNKNOWN, PR_EXPIRED, PR_INFLIGHT,
                                LNInvoice, pr_expiration_values, Invoice, OnchainInvoice)
-from electrum import bitcoin, constants
-from electrum.transaction import tx_from_any, PartialTxOutput
+from electrum import ravencoin, constants
+from electrum.transaction import tx_from_any, PartialTxOutput, RavenValue
 from electrum.util import (parse_URI, InvalidBitcoinURI, TxMinedInfo, maybe_extract_bolt11_invoice,
-                           InvoiceError, format_time, parse_max_spend)
+                           InvoiceError, format_time)
 from electrum.lnaddr import lndecode, LnInvoiceException
 from electrum.logging import Logger
 
@@ -202,7 +202,7 @@ class SendScreen(CScreen, Logger):
             return
         self.address = invoice
         self.message = dict(lnaddr.tags).get('d', None)
-        self.amount = self.app.format_amount_and_units(lnaddr.amount * bitcoin.COIN) if lnaddr.amount else ''
+        self.amount = self.app.format_amount_and_units(lnaddr.amount * ravencoin.COIN) if lnaddr.amount else ''
         self.payment_request = None
         self.is_lightning = True
 
@@ -297,7 +297,7 @@ class SendScreen(CScreen, Logger):
     def read_invoice(self):
         address = str(self.address)
         if not address:
-            self.app.show_error(_('Recipient not specified.') + ' ' + _('Please scan a Arielcoin address or a payment request'))
+            self.app.show_error(_('Recipient not specified.') + ' ' + _('Please scan a ravencoin address or a payment request'))
             return
         if not self.amount:
             self.app.show_error(_('Please enter an amount'))
@@ -318,9 +318,10 @@ class SendScreen(CScreen, Logger):
                 if self.payment_request:
                     outputs = self.payment_request.get_outputs()
                 else:
-                    if not bitcoin.is_address(address):
-                        self.app.show_error(_('Invalid Arielcoin Address') + ':\n' + address)
+                    if not ravencoin.is_address(address):
+                        self.app.show_error(_('Invalid Ravencoin Address') + ':\n' + address)
                         return
+
                     outputs = [PartialTxOutput.from_address_and_value(address, amount)]
                 return self.app.wallet.create_invoice(
                     outputs=outputs,
@@ -371,7 +372,7 @@ class SendScreen(CScreen, Logger):
 
     def _do_pay_onchain(self, invoice: OnchainInvoice) -> None:
         outputs = invoice.outputs
-        amount = sum(map(lambda x: x.value, outputs)) if not any(parse_max_spend(x.value) for x in outputs) else '!'
+        amount = sum(map(lambda x: x.value, outputs)) if '!' not in [x.value for x in outputs] else '!'
         coins = self.app.wallet.get_spendable_coins(None)
         make_tx = lambda rbf: self.app.wallet.make_unsigned_transaction(coins=coins, outputs=outputs, rbf=rbf)
         on_pay = lambda tx: self.app.protected(_('Send payment?'), self.send_tx, (tx, invoice))

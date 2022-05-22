@@ -18,7 +18,7 @@ from electrum.plugin import run_hook
 from electrum import util
 from electrum.util import (profiler, InvalidPassword, send_exception_to_crash_reporter,
                            format_satoshis, format_satoshis_plain, format_fee_satoshis,
-                           maybe_extract_bolt11_invoice, parse_max_spend)
+                           maybe_extract_bolt11_invoice)
 from electrum.invoices import PR_PAID, PR_FAILED
 from electrum import blockchain
 from electrum.network import Network, TxBroadcastError, BestEffortRequestFailed
@@ -28,7 +28,6 @@ from electrum.bitcoin import COIN
 
 from electrum.gui import messages
 from .i18n import _
-from .util import get_default_language
 from . import KIVY_GUI_PATH
 
 from kivy.app import App
@@ -77,11 +76,11 @@ Factory.register('TabbedCarousel', module='electrum.gui.kivy.uix.screens')
 # inside markup.
 from kivy.core.text import Label
 Label.register(
-    'DroidSans',
-    KIVY_GUI_PATH + '/data/fonts/DroidSansFallback.ttf',
-    KIVY_GUI_PATH + '/data/fonts/DroidSansFallback.ttf',
-    KIVY_GUI_PATH + '/data/fonts/DroidSansFallback.ttf',
-    KIVY_GUI_PATH + '/data/fonts/DroidSansFallback.ttf',
+    'Roboto',
+    KIVY_GUI_PATH + '/data/fonts/Roboto.ttf',
+    KIVY_GUI_PATH + '/data/fonts/Roboto.ttf',
+    KIVY_GUI_PATH + '/data/fonts/Roboto-Bold.ttf',
+    KIVY_GUI_PATH + '/data/fonts/Roboto-Bold.ttf',
 )
 
 
@@ -146,6 +145,7 @@ class ElectrumWindow(App, Logger):
         net_params = self.network.get_parameters()
         net_params = net_params._replace(oneserver=self.oneserver)
         self.network.run_from_another_thread(self.network.set_parameters(net_params))
+
     def toggle_oneserver(self, x):
         self.oneserver = not self.oneserver
 
@@ -403,7 +403,7 @@ class ElectrumWindow(App, Logger):
         Logger.__init__(self)
 
         self.electrum_config = config = kwargs.get('config', None)  # type: SimpleConfig
-        self.language = config.get('language', get_default_language())
+        self.language = config.get('language', 'en')
         self.network = network = kwargs.get('network', None)  # type: Network
         if self.network:
             self.num_blocks = self.network.get_local_height()
@@ -462,7 +462,7 @@ class ElectrumWindow(App, Logger):
             self.send_screen.do_clear()
 
     def on_qr(self, data: str):
-        from electrum.bitcoin import is_address
+        from electrum.ravencoin import is_address
         data = data.strip()
         if is_address(data):
             self.set_URI(data)
@@ -629,7 +629,7 @@ class ElectrumWindow(App, Logger):
         self.fiat_unit = self.fx.ccy if self.fx.is_enabled() else ''
         # default tab
         self.switch_to('history')
-        # bind intent for arielcoin: URI scheme
+        # bind intent for bitcoin: URI scheme
         if platform == 'android':
             from android import activity
             from jnius import autoclass
@@ -807,9 +807,9 @@ class ElectrumWindow(App, Logger):
             popup = Builder.load_file(KIVY_GUI_PATH + f'/uix/ui_screens/{name}.kv')
             master_public_keys_layout = popup.ids.master_public_keys
             for xpub in self.wallet.get_master_public_keys()[1:]:
-                master_public_keys_layout.add_widget(TopLabel(text=_('Master Key')))
+                master_public_keys_layout.add_widget(TopLabel(text=_('Master Public Key')))
                 ref = RefLabel()
-                ref.name = _('Master Key')
+                ref.name = _('Master Public Key')
                 ref.data = xpub
                 master_public_keys_layout.add_widget(ref)
             popup.open()
@@ -849,7 +849,7 @@ class ElectrumWindow(App, Logger):
         self.history_screen = None
         self.send_screen = None
         self.receive_screen = None
-        self.icon = os.path.dirname(KIVY_GUI_PATH) + "/icons/electrum.png"
+        self.icon = os.path.dirname(KIVY_GUI_PATH) + "/icons/electrum-ravencoin.png"
         self.tabs = self.root.ids['tabs']
 
     def update_interfaces(self, dt):
@@ -989,8 +989,8 @@ class ElectrumWindow(App, Logger):
     def format_amount_and_units(self, x) -> str:
         if x is None:
             return 'none'
-        if parse_max_spend(x):
-            return f'max({x})'
+        if x == '!':
+            return 'max'
         # FIXME this is using format_satoshis_plain instead of config.format_amount
         #       as we sometimes convert the returned string back to numbers,
         #       via self.get_amount()... the need for converting back should be removed

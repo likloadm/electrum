@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Electrum - lightweight Arielcoin client
+# Electrum - lightweight Bitcoin client
 # Copyright (C) 2012 thomasv@gitorious
 #
 # Permission is hereby granted, free of charge, to any person
@@ -25,16 +25,15 @@
 
 import re
 import decimal
-import traceback
 from decimal import Decimal
 from typing import NamedTuple, Sequence, Optional, List, TYPE_CHECKING
 
 from PyQt5.QtGui import QFontMetrics, QFont
 
-from electrum import bitcoin
-from electrum.util import bfh, maybe_extract_bolt11_invoice, BITCOIN_BIP21_URI_SCHEME, parse_max_spend
-from electrum.transaction import PartialTxOutput
-from electrum.bitcoin import opcodes, construct_script
+from electrum import ravencoin, assets
+from electrum.util import bfh, maybe_extract_bolt11_invoice, BITCOIN_BIP21_URI_SCHEME, Satoshis
+from electrum.transaction import PartialTxOutput, RavenValue
+from electrum.ravencoin import opcodes, construct_script
 from electrum.logging import Logger
 from electrum.lnaddr import LnDecodeException
 
@@ -68,6 +67,7 @@ class PayToEdit(CompletionTextEdit, ScanQRTextEdit, Logger):
         Logger.__init__(self)
         self.win = win
         self.amount_edit = win.amount_e
+        self.send_combo = win.to_send_combo
         self.setFont(QFont(MONOSPACE_FONT))
         self.document().contentsChanged.connect(self.update_size)
         self.heightMin = 0
@@ -102,19 +102,24 @@ class PayToEdit(CompletionTextEdit, ScanQRTextEdit, Logger):
             raise Exception("expected two comma-separated values: (address, amount)") from None
         scriptpubkey = self.parse_output(x)
         amount = self.parse_amount(y)
-        return PartialTxOutput(scriptpubkey=scriptpubkey, value=amount)
+        asset = self.win.get_asset_from_spend_tab()
+        if asset is not None:
+            script = assets.create_transfer_asset_script(scriptpubkey, asset, amount)
+            return PartialTxOutput(scriptpubkey=script, value=amount, asset=asset)
+        else:
+            return PartialTxOutput(scriptpubkey=scriptpubkey, value=amount)
 
     def parse_output(self, x) -> bytes:
         try:
             address = self.parse_address(x)
-            return bfh(bitcoin.address_to_script(address))
+            return bfh(ravencoin.address_to_script(address))
         except Exception:
-            print(traceback.format_exc())
+            pass
         try:
             script = self.parse_script(x)
             return bfh(script)
         except Exception:
-            print(traceback.format_exc())
+            pass
         raise Exception("Invalid address or script.")
 
     def parse_script(self, x):
@@ -132,8 +137,8 @@ class PayToEdit(CompletionTextEdit, ScanQRTextEdit, Logger):
         x = x.strip()
         if not x:
             raise Exception("Amount is empty")
-        if parse_max_spend(x):
-            return x
+        if x == '!':
+            return '!'
         p = pow(10, self.amount_edit.decimal_point())
         try:
             return int(p * Decimal(x))
@@ -144,7 +149,7 @@ class PayToEdit(CompletionTextEdit, ScanQRTextEdit, Logger):
         r = line.strip()
         m = re.match('^'+RE_ALIAS+'$', r)
         address = str(m.group(2) if m else r)
-        assert bitcoin.is_address(address)
+        assert ravencoin.is_address(address)
         return address
 
     def check_text(self):
@@ -204,13 +209,9 @@ class PayToEdit(CompletionTextEdit, ScanQRTextEdit, Logger):
                         idx=i, line_content=line.strip(), exc=e, is_multiline=True))
                     continue
             outputs.append(output)
-            if parse_max_spend(output.value):
-                is_max = True
-            else:
-                total += output.value
+            total += output.value.value
         if outputs:
             self.win.set_onchain(True)
-
         self.win.max_button.setChecked(is_max)
         self.outputs = outputs
         self.payto_scriptpubkey = None
@@ -229,13 +230,24 @@ class PayToEdit(CompletionTextEdit, ScanQRTextEdit, Logger):
 
     def get_outputs(self, is_max: bool) -> List[PartialTxOutput]:
         if self.payto_scriptpubkey:
+            asset = self.win.get_asset_from_spend_tab()
+            script = self.payto_scriptpubkey
             if is_max:
-                amount = '!'
+                amount_rval = sum([txin.value_sats() for txin in self.win.get_coins(asset=asset)], RavenValue())
+                if asset:
+                    amount = amount_rval.assets.get(asset, Satoshis(0))
+                else:
+                    amount = amount_rval.rvn_value
             else:
-                amount = self.amount_edit.get_amount()
+                amount = Satoshis(self.amount_edit.get_amount())
                 if amount is None:
                     return []
-            self.outputs = [PartialTxOutput(scriptpubkey=self.payto_scriptpubkey, value=amount)]
+            if asset:
+                script = assets.create_transfer_asset_script(script, asset, amount)
+            if amount == 0:
+                self.errors.append(PayToLineError('The amount cannot be 0.', None))
+                return []
+            self.outputs = [PartialTxOutput(scriptpubkey=script, value=amount, asset=asset, is_max=is_max)]
 
         return self.outputs[:]
 
@@ -281,7 +293,7 @@ class PayToEdit(CompletionTextEdit, ScanQRTextEdit, Logger):
         if not (('.' in key) and (not '<' in key) and (not ' ' in key)):
             return
         parts = key.split(sep=',')  # assuming single line
-        if parts and len(parts) > 0 and bitcoin.is_address(parts[0]):
+        if parts and len(parts) > 0 and ravencoin.is_address(parts[0]):
             return
         try:
             data = self.win.contacts.resolve(key)
