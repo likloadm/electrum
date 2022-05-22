@@ -51,7 +51,7 @@ requirements =
     cryptography,
     tdc_falcon,
     tdc_yespower,
-    kawpow,
+    ethash,
     arl_dilithium
 
 # (str) Presplash of the application

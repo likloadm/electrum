@@ -10,7 +10,7 @@ attrs>=19.2.0
 cffi
 tdc_falcon
 tdc_yespower
-kawpow
+ethash
 arl_dilithium
 
 # Note that we also need the dnspython[DNSSEC] extra which pulls in cryptography,
