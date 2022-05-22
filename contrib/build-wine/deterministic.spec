@@ -37,8 +37,7 @@ binaries += [('C:/tmp/libzbar-0.dll', '.')]
 datas = [
     (home+'electrum/*.json', 'electrum'),
     (home+'electrum/lnwire/*.csv', 'electrum/lnwire'),
-    (home+'electrum/wordlist/english.txt', 'electrum/wordlist'),
-    (home+'electrum/wordlist/slip39.txt', 'electrum/wordlist'),
+    (home+'electrum/wordlist/*.txt', 'electrum/wordlist'),
     (home+'electrum/locale', 'electrum/locale'),
     (home+'electrum/plugins', 'electrum/plugins'),
     (home+'electrum/gui/icons', 'electrum/gui/icons'),
@@ -58,17 +57,17 @@ a = Analysis([home+'run_electrum',
               home+'electrum/util.py',
               home+'electrum/wallet.py',
               home+'electrum/simple_config.py',
-              home+'electrum/bitcoin.py',
+              home+'electrum/ravencoin.py',
               home+'electrum/dnssec.py',
               home+'electrum/commands.py',
               home+'electrum/plugins/cosigner_pool/qt.py',
               home+'electrum/plugins/email_requests/qt.py',
               home+'electrum/plugins/trezor/qt.py',
-              home+'electrum/plugins/safe_t/client.py',
-              home+'electrum/plugins/safe_t/qt.py',
-              home+'electrum/plugins/keepkey/qt.py',
+              #home+'electrum/plugins/safe_t/client.py',
+              #home+'electrum/plugins/safe_t/qt.py',
+              #home+'electrum/plugins/keepkey/qt.py',
               home+'electrum/plugins/ledger/qt.py',
-              home+'electrum/plugins/coldcard/qt.py',
+              #home+'electrum/plugins/coldcard/qt.py',
               #home+'packages/requests/utils.py'
               ],
              binaries=binaries,
@@ -120,7 +119,7 @@ exe_standalone = EXE(
     debug=False,
     strip=None,
     upx=False,
-    icon=home+'electrum/gui/icons/electrum.ico',
+    icon=home+'electrum/gui/icons/electrum-ravencoin.ico',
     console=False)
     # console=True makes an annoying black box pop up, but it does make Electrum output command line commands, with this turned off no output will be given but commands can still be used
 
@@ -133,7 +132,7 @@ exe_portable = EXE(
     debug=False,
     strip=None,
     upx=False,
-    icon=home+'electrum/gui/icons/electrum.ico',
+    icon=home+'electrum/gui/icons/electrum-ravencoin.ico',
     console=False)
 
 #####
@@ -147,7 +146,7 @@ exe_inside_setup_noconsole = EXE(
     debug=False,
     strip=None,
     upx=False,
-    icon=home+'electrum/gui/icons/electrum.ico',
+    icon=home+'electrum/gui/icons/electrum-ravencoin.ico',
     console=False)
 
 exe_inside_setup_console = EXE(
@@ -158,7 +157,7 @@ exe_inside_setup_console = EXE(
     debug=False,
     strip=None,
     upx=False,
-    icon=home+'electrum/gui/icons/electrum.ico',
+    icon=home+'electrum/gui/icons/electrum-ravencoin.ico',
     console=True)
 
 coll = COLLECT(
@@ -170,6 +169,6 @@ coll = COLLECT(
     strip=None,
     upx=True,
     debug=False,
-    icon=home+'electrum/gui/icons/electrum.ico',
+    icon=home+'electrum/gui/icons/electrum-ravencoin.ico',
     console=False,
     name=os.path.join('dist', 'electrum'))

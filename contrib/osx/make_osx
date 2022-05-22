@@ -4,9 +4,9 @@ set -e
 
 # Parameterize
 PYTHON_VERSION=3.9.7
-BUILDDIR=/tmp/electrum-build
-PACKAGE=Electrum
-GIT_REPO=https://github.com/spesmilo/electrum
+BUILDDIR=/tmp/electrum-ravencoin-build
+PACKAGE=Electrum-Ravencoin
+GIT_REPO=https://github.com/Electrum-RVN-SIG/electrum-ravencoin
 
 export GCC_STRIP_BINARIES="1"
 export PYTHONDONTWRITEBYTECODE=1  # don't create __pycache__/ folders with .pyc files
@@ -55,15 +55,27 @@ function DoCodeSignMaybe { # ARGS: infoName fileOrDirName
         # no cert -> we won't codesign
         return
     fi
-    if [ -d "$file" ]; then
-        deep="--deep"
-    fi
     if [ -z "$infoName" ] || [ -z "$file" ] || [ ! -e "$file" ]; then
         fail "Argument error to internal function DoCodeSignMaybe()"
     fi
-    hardened_arg="--entitlements=${CONTRIB_OSX}/entitlements.plist -o runtime"
+    hardened_arg="--timestamp --entitlements=${CONTRIB_OSX}/entitlements.plist -o runtime"
 
     info "Code signing ${infoName}..."
+    if [ -d "$file" ]; then
+        #https://github.com/nuxeo/nuxeo-drive/blob/c87b627361d73590d810bfde68d33e2b30c2530f/tools/osx/deploy_ci_agent.sh#L108-L133
+
+        find "${file}/Contents/MacOS" -type f -exec codesign -f -v -s "$CODESIGN_CERT" $hardened_arg {} \;
+        
+        find "${file}/Contents/Resources" -type f -name "*.dylib" -exec codesign -f -v -s "$CODESIGN_CERT" $hardened_arg {} \;
+        
+        codesign -f -v -s "$CODESIGN_CERT" $hardened_arg "${file}";
+
+        echo ">>> [sign] Verifying code signature"
+        codesign --display --verbose "${file}"
+        codesign --verbose=4 --deep --strict "${file}"
+        #fspctl --assess --verbose "${file}"
+        return
+    fi
     codesign -f -v $deep -s "$CODESIGN_CERT" $hardened_arg "$file" || fail "Could not code sign ${infoName}"
 }
 
@@ -73,7 +85,7 @@ if [ ! -f "$CACHEDIR/$PKG_FILE" ]; then
     curl -o "$CACHEDIR/$PKG_FILE" "https://www.python.org/ftp/python/${PYTHON_VERSION}/$PKG_FILE"
 fi
 echo "f40f7407d20f88a6a64678b6586853de16cc5d7d07c82a8a2a7e43bba59dbae5  $CACHEDIR/$PKG_FILE" | shasum -a 256 -c \
-     || fail "python pkg checksum mismatched"
+    || fail "python pkg checksum mismatched"
 sudo installer -pkg "$CACHEDIR/$PKG_FILE" -target / \
     || fail "failed to install python"
 
@@ -127,7 +139,7 @@ info "generating locale"
 
 
 info "Installing some build-time deps for compilation..."
-brew install autoconf automake libtool gettext coreutils pkgconfig
+brew install autoconf automake libtool gettext coreutils pkgconfig cmake
 
 if [ ! -f "$PROJECT_ROOT"/electrum/libsecp256k1.0.dylib ]; then
     info "Building libsecp256k1 dylib..."
@@ -153,8 +165,6 @@ else
 fi
 cp "$PROJECT_ROOT"/electrum/libusb-1.0.dylib "$CONTRIB"/osx
 
-CFLAGS=-Wno-error=implicit-function-declaration python3 -m pip install --no-dependencies --no-warn-script-location tdc_falcon
-CFLAGS=-Wno-error=implicit-function-declaration python3 -m pip install --no-dependencies --no-warn-script-location tdc_yespower
 
 info "Installing requirements..."
 python3 -m pip install --no-dependencies --no-warn-script-location -Ir ./contrib/deterministic-build/requirements.txt \
@@ -168,6 +178,16 @@ info "Installing dependencies specific to binaries..."
 python3 -m pip install --no-dependencies --no-warn-script-location -Ir ./contrib/deterministic-build/requirements-binaries-mac.txt \
     || fail "Could not install dependencies specific to binaries"
 
+info "Installing dependencies specific to ravencoin..."
+python3 -m pip install --no-dependencies --no-warn-script-location -Ir ./contrib/deterministic-build/requirements-ravencoin.txt \
+    || fail "Could not install dependencies specific to ravencoin"
+
+info "Installing dependencies specific to ravencoin binaries..."
+# We don't want to ignore installed packages
+python3 -m pip install --no-warn-script-location -r ./contrib/deterministic-build/requirements-ravencoin-binaries.txt \
+    || fail "Could not install dependencies specific to ravencoin binaries"
+
+
 info "Building $PACKAGE..."
 python3 -m pip install --no-dependencies --no-warn-script-location . > /dev/null || fail "Could not build $PACKAGE"
 
@@ -179,9 +199,9 @@ VERSION=`git describe --tags --dirty --always`
 info "Building binary"
 pyinstaller --noconfirm --ascii --clean --name $VERSION contrib/osx/osx.spec || fail "Could not build binary"
 
-info "Adding bitcoin URI types to Info.plist"
+info "Adding ravencoin URI types to Info.plist"
 plutil -insert 'CFBundleURLTypes' \
-	-xml '<array><dict> <key>CFBundleURLName</key> <string>bitcoin</string> <key>CFBundleURLSchemes</key> <array><string>bitcoin</string><string>lightning</string></array> </dict></array>' \
+	-xml '<array><dict> <key>CFBundleURLName</key> <string>raven</string> <key>CFBundleURLSchemes</key> <array><string>raven</string><string>lightning</string></array> </dict></array>' \
 	-- dist/$PACKAGE.app/Contents/Info.plist \
 	|| fail "Could not add keys to Info.plist. Make sure the program 'plutil' exists and is installed."
 
@@ -197,9 +217,9 @@ if [ ! -z "$CODESIGN_CERT" ]; then
 fi
 
 info "Creating .DMG"
-hdiutil create -fs HFS+ -volname $PACKAGE -srcfolder dist/$PACKAGE.app dist/electrum-$VERSION.dmg || fail "Could not create .DMG"
+hdiutil create -fs HFS+ -volname $PACKAGE -srcfolder dist/$PACKAGE.app dist/electrum-ravencoin-$VERSION.dmg || fail "Could not create .DMG"
 
-DoCodeSignMaybe ".DMG" "dist/electrum-${VERSION}.dmg"
+DoCodeSignMaybe ".DMG" "dist/electrum-ravencoin-${VERSION}.dmg"
 
 if [ -z "$CODESIGN_CERT" ]; then
     warn "App was built successfully but was not code signed. Users may get security warnings from macOS."

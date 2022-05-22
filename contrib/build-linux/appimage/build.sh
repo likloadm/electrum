@@ -14,7 +14,6 @@ DISTDIR="$PROJECT_ROOT/dist"
 
 . "$CONTRIB"/build_tools_util.sh
 
-
 DOCKER_BUILD_FLAGS=""
 if [ ! -z "$ELECBUILD_NOCACHE" ] ; then
     info "ELECBUILD_NOCACHE is set. forcing rebuild of docker image."
