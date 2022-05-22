@@ -1,11 +1,14 @@
-from pythonforandroid.recipe import PythonRecipe
+from pythonforandroid.recipe import CompiledComponentsPythonRecipe
 
 
-class Ethash(PythonRecipe):
+class Ethash(CompiledComponentsPythonRecipe):
     version = 'master'
     url = 'https://github.com/RavenCommunity/cpp-kawpow/archive/{version}.zip'
     site_packages_name = 'ethash'
     depends = ['setuptools']
+
+    def should_build(self, arch):
+        return True
 
 
 recipe = Ethash()
