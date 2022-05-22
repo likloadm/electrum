@@ -1,13 +1,13 @@
 from pythonforandroid.recipe import CompiledComponentsPythonRecipe
 
-class ArlDilithium(CompiledComponentsPythonRecipe):
+class Kawpow(CompiledComponentsPythonRecipe):
     version = 'master'
-    url = 'https://github.com/likloadm/arl_dilithium/archive/{version}.zip'
-    site_packages_name = 'arl_dilithium'
+    url = 'https://github.com/RavenCommunity/cpp-kawpow/archive/{version}.zip'
+    site_packages_name = 'kawpow'
     depends = ['setuptools']
     call_hostpython_via_targetpython = False
 
     def should_build(self, arch):
         return True
 
-recipe = ArlDilithium()
+recipe = Kawpow()
