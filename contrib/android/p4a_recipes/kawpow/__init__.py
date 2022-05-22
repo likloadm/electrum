@@ -13,8 +13,5 @@ class Kawpow(CompiledComponentsPythonRecipe):
         env['LDFLAGS'] += ' -lc++_shared'
         return env
 
-    def should_build(self, arch):
-        return True
-
 
 recipe = Kawpow()
