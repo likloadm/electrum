@@ -40,7 +40,7 @@ from .logging import get_logger, Logger
 _logger = get_logger(__name__)
 
 try:
-    import kawpow
+    import ethash as kawpow
 except ImportError as e:
     sys.exit("x16r, x16rv2 and kawpow modules are required")
 

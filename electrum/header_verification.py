@@ -6,7 +6,7 @@ import multiprocessing
 import struct
 import traceback
 
-import kawpow
+import ethash as kawpow
 
 import warnings
 
