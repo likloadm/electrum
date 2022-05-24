@@ -8,8 +8,8 @@ certifi
 bitstring
 attrs>=19.2.0
 cffi
-tdc_falcon
-tdc_yespower
+kawpow
+arl_dilithium
 
 # Note that we also need the dnspython[DNSSEC] extra which pulls in cryptography,
 # but as that is not pure-python it cannot be listed in this file!
