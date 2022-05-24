@@ -1,5 +1,5 @@
 //
-// Simple Tidecoin Payment Protocol messages
+// Simple Arielcoin Payment Protocol messages
 //
 // Use fields 1000+ for extensions;
 // to avoid conflicts, register extensions via pull-req at

@@ -1,4 +1,4 @@
-# Electrum - lightweight Tidecoin client
+# Electrum - lightweight Arielcoin client
 # Copyright (C) 2011 Thomas Voegtlin
 #
 # Permission is hereby granted, free of charge, to any person
@@ -83,9 +83,9 @@ def all_subclasses(cls) -> Set:
 ca_path = certifi.where()
 
 
-base_units = {'TDC':8, 'mTDC':5, 'tides':2, 'tidoshi':0}
+base_units = {'ARL':8, 'pearls':5, 'tulips':2, 'seashells':0}
 base_units_inverse = inv_dict(base_units)
-base_units_list = ['TDC', 'mTDC', 'tides', 'tidoshi']  # list(dict) does not guarantee order
+base_units_list = ['ARL', 'pearls', 'tulips', 'seashells']  # list(dict) does not guarantee order
 
 DECIMAL_POINT_DEFAULT = 8  # mBTC
 
@@ -797,11 +797,11 @@ def time_difference(distance_in_time, include_seconds):
         return "over %d years" % (round(distance_in_minutes / 525600))
 
 mainnet_block_explorers = {
-    'Tidecoin main Explorer': ('http://explorer.tidecoin.org/',
+    'Arielcoin main Explorer': ('http://explorer.arielcoin.org/',
                         {'tx': 'tx/', 'addr': 'address/'}),
-    'Tidecoin Cash Explorer': ('http://explorer.tdc.cash/',
+    'Arielcoin Cash Explorer': ('http://explorer.tdc.cash/',
                         {'tx': 'tx/', 'addr': 'address/'}),
-    'Tidecoin Gleeze Explorer': ('http://tidecoin-explorer.gleeze.com/',
+    'Arielcoin Gleeze Explorer': ('http://arielcoin-explorer.gleeze.com/',
                         {'tx': 'tx/', 'addr': 'address/'})
 }
 
@@ -896,7 +896,7 @@ def block_explorer_URL(config: 'SimpleConfig', kind: str, item: str) -> Optional
 
 
 # note: when checking against these, use .lower() to support case-insensitivity
-BITCOIN_BIP21_URI_SCHEME = 'tidecoin'
+BITCOIN_BIP21_URI_SCHEME = 'arielcoin'
 LIGHTNING_URI_SCHEME = 'lightning'
 
 
