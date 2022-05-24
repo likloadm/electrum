@@ -6,6 +6,7 @@ class Kawpow(CompiledComponentsPythonRecipe):
     site_packages_name = 'kawpow'
     depends = ['openssl', 'six', 'setuptools', 'cffi', 'python3', 'shared', 'pycparser', 'libffi']
     call_hostpython_via_targetpython = False
+    need_stl_shared = True
 
     def should_build(self, arch):
         return True
