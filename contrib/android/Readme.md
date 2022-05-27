@@ -66,7 +66,7 @@ You probably need to clear the cache: `rm -rf .buildozer/android/platform/build-
 Assuming `adb` is installed:
 ```
 $ adb -d install -r dist/Electrum-*-arm64-v8a-debug.apk
-$ adb shell monkey -p org.electrum.electrum 1
+$ adb shell monkey -p org.electrum_arielcoin.electrum_arielcoin 1
 ```
 
 
@@ -91,7 +91,7 @@ adb logcat | grep python
 ```
 Better `grep` but fragile because of `cut`:
 ```
-adb logcat | grep -F "`adb shell ps | grep org.electrum.electrum | cut -c14-19`"
+adb logcat | grep -F "`adb shell ps | grep org.electrum_arielcoin.electrum_arielcoin | cut -c14-19`"
 ```
 
 
@@ -118,8 +118,8 @@ of Android does not let you access the internal storage of an app without root.
 (See [this](https://stackoverflow.com/q/9017073))
 ```
 $ adb shell
-$ run-as org.electrum.electrum ls /data/data/org.electrum.electrum/files/data
-$ run-as org.electrum.electrum cp /data/data/org.electrum.electrum/files/data/wallets/my_wallet /sdcard/some_path/my_wallet
+$ run-as org.electrum_arielcoin.electrum_arielcoin ls /data/data/org.electrum_arielcoin.electrum_arielcoin/files/data
+$ run-as org.electrum_arielcoin.electrum_arielcoin cp /data/data/org.electrum_arielcoin.electrum_arielcoin/files/data/wallets/my_wallet /sdcard/some_path/my_wallet
 ```
 
 ### How to investigate diff between binaries if reproducibility fails?
