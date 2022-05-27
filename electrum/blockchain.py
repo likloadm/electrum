@@ -629,9 +629,8 @@ class Blockchain(Logger):
                 Diff = (LastBlockTime - BlockReading.get('timestamp'))
                 nActualTimespan += Diff
             LastBlockTime = BlockReading.get('timestamp')
-            print((height - 1) - CountBlocks, PastBlocksMax)
-            BlockReading = get_block_reading_from_height((height - 1) - CountBlocks)
 
+            BlockReading = get_block_reading_from_height((height - 1) - CountBlocks)
 
         bnNew = PastDifficultyAverage
         nTargetTimespan = CountBlocks * 60  # 1 min

@@ -319,12 +319,12 @@ def _verify_process(q_in, q_out):
 
 # Blocking, but shouldn't block
 def verify_chunk(data_tup):
-    return queue_in.put(data_tup)
+    return
 
 
 # Blocking, will block
 def get_verify_result():
-    return queue_out.get()
+    return
 
 
 # Blocking, may block if syncing

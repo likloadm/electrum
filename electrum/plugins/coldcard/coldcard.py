@@ -416,7 +416,7 @@ class Coldcard_KeyStore(Hardware_KeyStore):
 
     @staticmethod
     def _encode_txin_type(txin_type):
-        # Map from Electrum code names to our code numbers.
+        # Map from electrum code names to our code numbers.
         return {'standard': AF_CLASSIC, 'p2pkh': AF_CLASSIC,
                 'p2sh': AF_P2SH,
                 'p2wpkh-p2sh': AF_P2WPKH_P2SH,

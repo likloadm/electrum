@@ -70,7 +70,7 @@ ca_path = certifi.where()
 
 BUCKET_NAME_OF_ONION_SERVERS = 'onion'
 
-MAX_INCOMING_MSG_SIZE = 1_000_000  # in bytes
+MAX_INCOMING_MSG_SIZE = 2_000_000  # in bytes
 
 _KNOWN_NETWORK_PROTOCOLS = {'t', 's'}
 PREFERRED_NETWORK_PROTOCOL = 's'
@@ -589,7 +589,6 @@ class Interface(Logger):
         # use lower timeout as we usually have network.bhi_lock here
         timeout = self.network.get_network_timeout_seconds(NetworkTimeout.Urgent)
         res = await self.session.send_request('blockchain.block.header', [height], timeout=timeout)
-        print("header", blockchain.deserialize_header(bytes.fromhex(res), height))
         return blockchain.deserialize_header(bytes.fromhex(res), height)
 
     async def request_chunk(self, height: int, tip=None, *, can_return_early=False):
@@ -606,13 +605,15 @@ class Interface(Logger):
         if can_return_early and ret:
             return
         self.logger.info(f"requesting chunk from height {height}")
-        size = 10
+        size = 7200
+        print(tip, height, size)
         if tip is not None:
             size = min(size, tip - height + 1)
             size = max(size, 0)
         try:
             self._requested_chunks.add((height, height + size))
             res = await self.session.send_request('blockchain.block.headers', [height, size])
+            print("dlina", res['max'])
         finally:
             self._requested_chunks.discard((height, height + size))
         assert_dict_contains_field(res, field_name='count')
