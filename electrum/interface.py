@@ -606,7 +606,7 @@ class Interface(Logger):
         if can_return_early and ret:
             return
         self.logger.info(f"requesting chunk from height {height}")
-        size = 2016
+        size = 10
         if tip is not None:
             size = min(size, tip - height + 1)
             size = max(size, 0)
