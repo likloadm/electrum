@@ -606,14 +606,12 @@ class Interface(Logger):
             return
         self.logger.info(f"requesting chunk from height {height}")
         size = 7200
-        print(tip, height, size)
         if tip is not None:
             size = min(size, tip - height + 1)
             size = max(size, 0)
         try:
             self._requested_chunks.add((height, height + size))
             res = await self.session.send_request('blockchain.block.headers', [height, size])
-            print("dlina", res['max'])
         finally:
             self._requested_chunks.discard((height, height + size))
         assert_dict_contains_field(res, field_name='count')
