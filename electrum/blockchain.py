@@ -58,7 +58,7 @@ DGW_PASTBLOCKS = 24
 X16Rv2ActivationTS = 0
 KawpowActivationTS = 0
 KawpowActivationHeight = 0
-nDGWActivationBlock = 10
+nDGWActivationBlock = 25
 
 
 class MissingHeader(Exception):
@@ -629,8 +629,9 @@ class Blockchain(Logger):
                 Diff = (LastBlockTime - BlockReading.get('timestamp'))
                 nActualTimespan += Diff
             LastBlockTime = BlockReading.get('timestamp')
-
+            print((height - 1) - CountBlocks, PastBlocksMax)
             BlockReading = get_block_reading_from_height((height - 1) - CountBlocks)
+
 
         bnNew = PastDifficultyAverage
         nTargetTimespan = CountBlocks * 60  # 1 min
